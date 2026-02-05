@@ -60,24 +60,29 @@ export interface StatusPreset {
   color: string;
 }
 
+// Sous-espèces liées aux espèces
+export type SubspeciesBySpecies = Record<string, string[]>;
+
 export interface Presets {
   categories: string[];
   brands: string[];
   universes: string[];
   species: string[];
-  subspecies: string[];
+  subspeciesBySpecies: SubspeciesBySpecies;
   sizes: string[];
   habitats: string[];
   statuses: StatusPreset[];
 }
 
+const sortAlpha = (arr: string[]) => [...arr].sort((a, b) => a.localeCompare(b, 'fr'));
+
 export const DEFAULT_PRESETS: Presets = {
-  categories: [
+  categories: sortAlpha([
     'Figurines',
     'Impression 3D',
     'Jeu de Société',
-  ].sort((a, b) => a.localeCompare(b, 'fr')),
-  brands: [
+  ]),
+  brands: sortAlpha([
     'Archon Studio',
     'Cool Mini Or Not',
     'Corvus Belli',
@@ -87,8 +92,8 @@ export const DEFAULT_PRESETS: Presets = {
     'Reaper Miniatures',
     'Wizkids',
     'Autre',
-  ].sort((a, b) => a.localeCompare(b, 'fr')),
-  universes: [
+  ]),
+  universes: sortAlpha([
     'Age of Sigmar',
     'D&D / Pathfinder',
     'Fantasy',
@@ -98,8 +103,8 @@ export const DEFAULT_PRESETS: Presets = {
     'Warhammer 40K',
     'Zombicide',
     'Autre',
-  ].sort((a, b) => a.localeCompare(b, 'fr')),
-  species: [
+  ]),
+  species: sortAlpha([
     'Animal',
     'Démon',
     'Dragon',
@@ -112,18 +117,21 @@ export const DEFAULT_PRESETS: Presets = {
     'Orc',
     'Robot',
     'Autre',
-  ].sort((a, b) => a.localeCompare(b, 'fr')),
-  subspecies: [
-    'Elfe Noir',
-    'Gobelin',
-    'Ogre',
-    'Skaven',
-    'Squelette',
-    'Troll',
-    'Vampire',
-    'Zombie',
-    'Autre',
-  ].sort((a, b) => a.localeCompare(b, 'fr')),
+  ]),
+  subspeciesBySpecies: {
+    'Animal': sortAlpha(['Loup', 'Ours', 'Aigle', 'Serpent', 'Autre']),
+    'Démon': sortAlpha(['Démon Majeur', 'Démon Mineur', 'Diable', 'Succube', 'Autre']),
+    'Dragon': sortAlpha(['Dragon Rouge', 'Dragon Noir', 'Dragon Blanc', 'Dragonneau', 'Autre']),
+    'Elfe': sortAlpha(['Elfe Noir', 'Elfe Sylvain', 'Haut Elfe', 'Elfe des Mers', 'Autre']),
+    'Géant': sortAlpha(['Ogre', 'Troll', 'Géant des Collines', 'Géant de Feu', 'Autre']),
+    'Humain': sortAlpha(['Guerrier', 'Mage', 'Prêtre', 'Voleur', 'Noble', 'Paysan', 'Autre']),
+    'Hybride': sortAlpha(['Gobelin', 'Skaven', 'Homme-Lézard', 'Minotaure', 'Centaure', 'Autre']),
+    'Mort-Vivant': sortAlpha(['Zombie', 'Squelette', 'Fantôme', 'Vampire', 'Liche', 'Goule', 'Autre']),
+    'Nain': sortAlpha(['Nain des Montagnes', 'Nain du Chaos', 'Nain Forgeur', 'Autre']),
+    'Orc': sortAlpha(['Orc Noir', 'Orc Sauvage', 'Demi-Orc', 'Autre']),
+    'Robot': sortAlpha(['Automate', 'Cyborg', 'Droïde', 'Mecha', 'Autre']),
+    'Autre': sortAlpha(['Autre']),
+  },
   sizes: [
     'Minuscule',
     'Petit',
@@ -132,7 +140,7 @@ export const DEFAULT_PRESETS: Presets = {
     'Très Grand',
     'Gigantesque',
   ],
-  habitats: [
+  habitats: sortAlpha([
     'Aquatique',
     'Désert',
     'Forêt',
@@ -143,7 +151,7 @@ export const DEFAULT_PRESETS: Presets = {
     'Urbain',
     'Volant',
     'Autre',
-  ].sort((a, b) => a.localeCompare(b, 'fr')),
+  ]),
   statuses: [
     { value: 'unpainted', label: 'Non peinte', color: 'bg-gray-400' },
     { value: 'primed', label: 'Sous-couchée', color: 'bg-slate-400' },
@@ -178,3 +186,17 @@ export const GRID_SIZES = [
 export type GridSize = typeof GRID_SIZES[number]['value'];
 
 export type ViewMode = 'grid' | 'table';
+
+// Helper function to get all subspecies as flat array (for backward compatibility)
+export function getAllSubspecies(presets: Presets): string[] {
+  const allSubs = new Set<string>();
+  Object.values(presets.subspeciesBySpecies).forEach(subs => {
+    subs.forEach(s => allSubs.add(s));
+  });
+  return sortAlpha(Array.from(allSubs));
+}
+
+// Helper function to get subspecies for a specific species
+export function getSubspeciesForSpecies(presets: Presets, species: string): string[] {
+  return presets.subspeciesBySpecies[species] || [];
+}

@@ -2,6 +2,7 @@ import { Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import { usePresets } from '../context/PresetContext';
 import type { FilterState } from '../types';
+import { getSubspeciesForSpecies } from '../types';
 
 interface FilterPanelProps {
   filters: FilterState;
@@ -176,7 +177,16 @@ export function FilterPanel({
                 <label className="block text-sm font-medium text-gray-700 mb-2">Espèce</label>
                 <select
                   value={filters.species}
-                  onChange={(e) => onChange({ ...filters, species: e.target.value })}
+                  onChange={(e) => {
+                    const newSpecies = e.target.value;
+                    // Reset subspecies when species changes
+                    const availableSubs = getSubspeciesForSpecies(presets, newSpecies);
+                    onChange({
+                      ...filters,
+                      species: newSpecies,
+                      subspecies: availableSubs.includes(filters.subspecies) ? filters.subspecies : '',
+                    });
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
                 >
                   <option value="">Toutes</option>
@@ -190,16 +200,17 @@ export function FilterPanel({
 
           {/* Sous-Espèce & Taille filters */}
           <div className="grid grid-cols-2 gap-3">
-            {subspecies.length > 0 && (
+            {(filters.species ? getSubspeciesForSpecies(presets, filters.species).length > 0 : subspecies.length > 0) && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Sous-Espèce</label>
                 <select
                   value={filters.subspecies}
                   onChange={(e) => onChange({ ...filters, subspecies: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
+                  disabled={!filters.species}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
-                  <option value="">Toutes</option>
-                  {subspecies.map(sub => (
+                  <option value="">{filters.species ? 'Toutes' : 'Choisir une espèce'}</option>
+                  {(filters.species ? getSubspeciesForSpecies(presets, filters.species) : subspecies).map(sub => (
                     <option key={sub} value={sub}>{sub}</option>
                   ))}
                 </select>

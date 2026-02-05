@@ -1,9 +1,10 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import type { Presets, StatusPreset } from '../types';
-import { DEFAULT_PRESETS } from '../types';
+import type { Presets, StatusPreset, SubspeciesBySpecies } from '../types';
+import { DEFAULT_PRESETS, getAllSubspecies } from '../types';
 
 interface PresetContextType {
   presets: Presets;
+  subspecies: string[]; // Flat list for backward compatibility
   addCategory: (category: string) => void;
   removeCategory: (category: string) => void;
   addBrand: (brand: string) => void;
@@ -12,8 +13,9 @@ interface PresetContextType {
   removeUniverse: (universe: string) => void;
   addSpecies: (species: string) => void;
   removeSpecies: (species: string) => void;
-  addSubspecies: (subspecies: string) => void;
-  removeSubspecies: (subspecies: string) => void;
+  addSubspecies: (species: string, subspecies: string) => void;
+  removeSubspecies: (species: string, subspecies: string) => void;
+  getSubspeciesForSpecies: (species: string) => string[];
   addSize: (size: string) => void;
   removeSize: (size: string) => void;
   addHabitat: (habitat: string) => void;
@@ -28,16 +30,27 @@ const PresetContext = createContext<PresetContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'minilist_presets';
 
+// Migration helper: convert old subspecies array to new subspeciesBySpecies format
+function migrateSubspecies(parsed: Record<string, unknown>): SubspeciesBySpecies {
+  // If already has new format, use it
+  if (parsed.subspeciesBySpecies && typeof parsed.subspeciesBySpecies === 'object') {
+    return parsed.subspeciesBySpecies as SubspeciesBySpecies;
+  }
+  // Return default subspecies by species
+  return DEFAULT_PRESETS.subspeciesBySpecies;
+}
+
 export function PresetProvider({ children }: { children: ReactNode }) {
   const [presets, setPresets] = useState<Presets>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        // Merge with defaults to ensure all fields exist
+        // Merge with defaults to ensure all fields exist, with migration
         return {
           ...DEFAULT_PRESETS,
           ...parsed,
+          subspeciesBySpecies: migrateSubspecies(parsed),
         };
       } catch {
         return DEFAULT_PRESETS;
@@ -93,14 +106,32 @@ export function PresetProvider({ children }: { children: ReactNode }) {
     setPresets(prev => ({ ...prev, species: prev.species.filter(s => s !== species) }));
   };
 
-  const addSubspecies = (subspecies: string) => {
-    if (!presets.subspecies.includes(subspecies)) {
-      setPresets(prev => ({ ...prev, subspecies: sortAlpha([...prev.subspecies, subspecies]) }));
+  const addSubspecies = (species: string, subspecies: string) => {
+    const currentSubs = presets.subspeciesBySpecies[species] || [];
+    if (!currentSubs.includes(subspecies)) {
+      setPresets(prev => ({
+        ...prev,
+        subspeciesBySpecies: {
+          ...prev.subspeciesBySpecies,
+          [species]: sortAlpha([...currentSubs, subspecies]),
+        },
+      }));
     }
   };
 
-  const removeSubspecies = (subspecies: string) => {
-    setPresets(prev => ({ ...prev, subspecies: prev.subspecies.filter(s => s !== subspecies) }));
+  const removeSubspecies = (species: string, subspecies: string) => {
+    const currentSubs = presets.subspeciesBySpecies[species] || [];
+    setPresets(prev => ({
+      ...prev,
+      subspeciesBySpecies: {
+        ...prev.subspeciesBySpecies,
+        [species]: currentSubs.filter(s => s !== subspecies),
+      },
+    }));
+  };
+
+  const getSubspeciesForSpecies = (species: string): string[] => {
+    return presets.subspeciesBySpecies[species] || [];
   };
 
   const addSize = (size: string) => {
@@ -144,10 +175,14 @@ export function PresetProvider({ children }: { children: ReactNode }) {
     setPresets(DEFAULT_PRESETS);
   };
 
+  // Flat list of all subspecies for backward compatibility
+  const subspeciesList = getAllSubspecies(presets);
+
   return (
     <PresetContext.Provider
       value={{
         presets,
+        subspecies: subspeciesList,
         addCategory,
         removeCategory,
         addBrand,
@@ -158,6 +193,7 @@ export function PresetProvider({ children }: { children: ReactNode }) {
         removeSpecies,
         addSubspecies,
         removeSubspecies,
+        getSubspeciesForSpecies,
         addSize,
         removeSize,
         addHabitat,

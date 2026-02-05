@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
 import type { BatchEditInput } from '../types';
+import { getSubspeciesForSpecies } from '../types';
 
 interface BatchEditModalProps {
   selectedCount: number;
@@ -118,7 +119,16 @@ export function BatchEditModal({ selectedCount, onSubmit, onClose }: BatchEditMo
             <label className="block text-sm font-medium text-gray-700 mb-1">Espèce</label>
             <select
               value={form.species || ''}
-              onChange={(e) => setForm(prev => ({ ...prev, species: e.target.value || undefined }))}
+              onChange={(e) => {
+                const newSpecies = e.target.value || undefined;
+                // Reset subspecies when species changes
+                const availableSubs = newSpecies ? getSubspeciesForSpecies(presets, newSpecies) : [];
+                setForm(prev => ({
+                  ...prev,
+                  species: newSpecies,
+                  subspecies: prev.subspecies && availableSubs.includes(prev.subspecies) ? prev.subspecies : undefined,
+                }));
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
             >
               <option value="">— Ne pas modifier —</option>
@@ -134,10 +144,11 @@ export function BatchEditModal({ selectedCount, onSubmit, onClose }: BatchEditMo
             <select
               value={form.subspecies || ''}
               onChange={(e) => setForm(prev => ({ ...prev, subspecies: e.target.value || undefined }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              disabled={!form.species}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
-              <option value="">— Ne pas modifier —</option>
-              {presets.subspecies.map(sub => (
+              <option value="">{form.species ? '— Ne pas modifier —' : '— Choisir une espèce —'}</option>
+              {form.species && getSubspeciesForSpecies(presets, form.species).map(sub => (
                 <option key={sub} value={sub}>{sub}</option>
               ))}
             </select>
