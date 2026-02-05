@@ -15,6 +15,43 @@ interface MultiAddModalProps {
   onUploadImage: (file: File) => Promise<string>;
 }
 
+// Compress image to reduce localStorage usage
+async function compressImage(file: File, maxWidth = 800, quality = 0.7): Promise<File> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let { width, height } = img;
+
+      // Resize if larger than maxWidth
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+          } else {
+            resolve(file);
+          }
+        },
+        'image/jpeg',
+        quality
+      );
+    };
+    img.onerror = () => resolve(file);
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 export function MultiAddModal({ onSubmit, onClose, onUploadImage }: MultiAddModalProps) {
   const [items, setItems] = useState<MultiAddItem[]>([
     { id: crypto.randomUUID(), name: '', image_url: null },
@@ -38,9 +75,11 @@ export function MultiAddModal({ onSubmit, onClose, onUploadImage }: MultiAddModa
     ));
   };
 
-  const handleImageSelect = (id: string, file: File) => {
-    const previewUrl = URL.createObjectURL(file);
-    updateItem(id, { image_url: previewUrl, imageFile: file });
+  const handleImageSelect = async (id: string, file: File) => {
+    // Compress image immediately to save memory and localStorage space
+    const compressedFile = await compressImage(file);
+    const previewUrl = URL.createObjectURL(compressedFile);
+    updateItem(id, { image_url: previewUrl, imageFile: compressedFile });
   };
 
   const handleFileInput = (id: string) => {
@@ -57,50 +96,55 @@ export function MultiAddModal({ onSubmit, onClose, onUploadImage }: MultiAddModa
       return;
     }
 
+    setSubmitting(true);
+    const figurines: FigurineInput[] = [];
+
+    // Process items one by one to better handle errors
+    for (const item of validItems) {
+      let imageUrl: string | null = null;
+
+      if (item.imageFile) {
+        try {
+          imageUrl = await onUploadImage(item.imageFile);
+        } catch (error) {
+          console.error('Failed to upload image for', item.name, error);
+          // Continue without image if upload fails
+        }
+      }
+
+      figurines.push({
+        name: item.name.trim(),
+        category: '',
+        brand: '',
+        game: '',
+        collection: '',
+        group: '',
+        universe: '',
+        species: '',
+        subspecies: '',
+        size: 'Normal',
+        alignment: '',
+        habitats: [],
+        status: 'unpainted',
+        price: null,
+        quantity: 1,
+        tags: [],
+        notes: '',
+        image_url: imageUrl,
+      });
+    }
+
     try {
-      setSubmitting(true);
-
-      // Upload images and create figurines
-      const figurines: FigurineInput[] = await Promise.all(
-        validItems.map(async (item) => {
-          let imageUrl: string | null = null;
-
-          if (item.imageFile) {
-            try {
-              imageUrl = await onUploadImage(item.imageFile);
-            } catch (error) {
-              console.error('Failed to upload image:', error);
-            }
-          }
-
-          return {
-            name: item.name.trim(),
-            category: '',
-            brand: '',
-            game: '',
-            collection: '',
-            group: '',
-            universe: '',
-            species: '',
-            subspecies: '',
-            size: 'Normal',
-            alignment: '',
-            habitats: [],
-            status: 'unpainted',
-            price: null,
-            quantity: 1,
-            tags: [],
-            notes: '',
-            image_url: imageUrl,
-          };
-        })
-      );
-
       await onSubmit(figurines);
       onClose();
     } catch (error) {
       console.error('Failed to add figurines:', error);
-      alert('Erreur lors de l\'ajout des figurines');
+      const errorMsg = error instanceof Error ? error.message : 'Erreur inconnue';
+      if (errorMsg.includes('quota') || errorMsg.includes('QuotaExceeded')) {
+        alert('Espace de stockage insuffisant. Essayez de supprimer des figurines ou réduisez la taille des images.');
+      } else {
+        alert(`Erreur lors de l'ajout: ${errorMsg}`);
+      }
     } finally {
       setSubmitting(false);
     }

@@ -89,7 +89,14 @@ export const figurineService = {
 
     const figurines = getLocalFigurines();
     figurines.unshift(figurine);
-    saveLocalFigurines(figurines);
+    try {
+      saveLocalFigurines(figurines);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        throw new Error('Espace de stockage local insuffisant. Supprimez des figurines ou exportez vos données.');
+      }
+      throw error;
+    }
     return figurine;
   },
 
