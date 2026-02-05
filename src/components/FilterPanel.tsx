@@ -73,6 +73,87 @@ export function FilterPanel({
     onChange({ ...filters, tags: newTags });
   };
 
+  // Build list of active filter items for display
+  const getActiveFilterItems = () => {
+    const items: { key: string; label: string; onRemove: () => void }[] = [];
+
+    if (filters.status) {
+      const statusLabel = presets.statuses.find(s => s.value === filters.status)?.label || filters.status;
+      items.push({
+        key: 'status',
+        label: `Statut: ${statusLabel}`,
+        onRemove: () => onChange({ ...filters, status: '' }),
+      });
+    }
+    if (filters.category) {
+      items.push({
+        key: 'category',
+        label: `Catégorie: ${filters.category}`,
+        onRemove: () => onChange({ ...filters, category: '' }),
+      });
+    }
+    if (filters.brand) {
+      items.push({
+        key: 'brand',
+        label: `Marque: ${filters.brand}`,
+        onRemove: () => onChange({ ...filters, brand: '' }),
+      });
+    }
+    if (filters.universe) {
+      items.push({
+        key: 'universe',
+        label: `Univers: ${filters.universe}`,
+        onRemove: () => onChange({ ...filters, universe: '' }),
+      });
+    }
+    if (filters.species) {
+      items.push({
+        key: 'species',
+        label: `Espèce: ${filters.species}`,
+        onRemove: () => onChange({ ...filters, species: '', subspecies: '' }),
+      });
+    }
+    if (filters.subspecies) {
+      items.push({
+        key: 'subspecies',
+        label: `Sous-Espèce: ${filters.subspecies}`,
+        onRemove: () => onChange({ ...filters, subspecies: '' }),
+      });
+    }
+    if (filters.size) {
+      items.push({
+        key: 'size',
+        label: `Taille: ${filters.size}`,
+        onRemove: () => onChange({ ...filters, size: '' }),
+      });
+    }
+    if (filters.alignment) {
+      items.push({
+        key: 'alignment',
+        label: `Alignement: ${filters.alignment}`,
+        onRemove: () => onChange({ ...filters, alignment: '' }),
+      });
+    }
+    for (const habitat of filters.habitats) {
+      items.push({
+        key: `habitat-${habitat}`,
+        label: `Habitat: ${habitat}`,
+        onRemove: () => toggleHabitat(habitat),
+      });
+    }
+    for (const tag of filters.tags) {
+      items.push({
+        key: `tag-${tag}`,
+        label: `Tag: ${tag}`,
+        onRemove: () => toggleTag(tag),
+      });
+    }
+
+    return items;
+  };
+
+  const activeFilterItems = getActiveFilterItems();
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
       <button
@@ -90,6 +171,40 @@ export function FilterPanel({
         </div>
         {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
       </button>
+
+      {/* Active filters display */}
+      {activeFilterItems.length > 0 && !isOpen && (
+        <div className="px-4 pb-3 flex flex-wrap gap-2 border-t border-gray-100 pt-3">
+          {activeFilterItems.map(item => (
+            <span
+              key={item.key}
+              className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary-50 text-primary-700 rounded-full text-sm"
+            >
+              {item.label}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  item.onRemove();
+                }}
+                className="hover:text-primary-900 ml-0.5"
+              >
+                <X size={14} />
+              </button>
+            </span>
+          ))}
+          {activeFilterItems.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                clearFilters();
+              }}
+              className="text-sm text-red-500 hover:text-red-600 px-2"
+            >
+              Tout effacer
+            </button>
+          )}
+        </div>
+      )}
 
       {isOpen && (
         <div className="px-4 pb-4 space-y-4 border-t border-gray-100">

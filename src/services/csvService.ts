@@ -5,6 +5,7 @@ const DELIMITER = ';';
 
 const CSV_HEADERS = [
   'name',
+  'original_name',
   'category',
   'brand',
   'game',
@@ -24,10 +25,10 @@ const CSV_HEADERS = [
   'image_url',
 ] as const;
 
-const CSV_TEMPLATE_CONTENT = `name;category;brand;game;collection;group;universe;species;subspecies;size;alignment;habitats;status;price;quantity;tags;notes;image_url
-Space Marine Intercessor;Figurines;Games Workshop;Warhammer 40K;Kill Team;Ultramarines;Warhammer 40K;Humain;;Normal;Loyal Bon;;painted;35.00;5;space marine,ultramarines,sci-fi;Peint en bleu Ultramarine;
-Goblin Archer;Figurines;Reaper Miniatures;;Pathfinder Battles;;D&D / Pathfinder;Hybride;Gobelin;Petit;Chaotique Mauvais;Forêt;unpainted;4.50;10;gobelin,archer,fantasy;;
-Dragon Rouge;Impression 3D;;;;;Fantasy;Dragon;;Gigantesque;Chaotique Neutre;Montagne,Grotte;wip;;1;dragon,boss,epic;En cours de peinture - base rouge faite;
+const CSV_TEMPLATE_CONTENT = `name;original_name;category;brand;game;collection;group;universe;species;subspecies;size;alignment;habitats;status;price;quantity;tags;notes;image_url
+Space Marine Intercessor;Space Marine Intercessor;Figurines;Games Workshop;Warhammer 40K;Kill Team;Ultramarines;Warhammer 40K;Humain;;Normal;Loyal Bon;;painted;35.00;5;space marine,ultramarines,sci-fi;Peint en bleu Ultramarine;
+Goblin Archer;Goblin Archer;Figurines;Reaper Miniatures;;Pathfinder Battles;;D&D / Pathfinder;Hybride;Gobelin;Petit;Chaotique Mauvais;Forêt;unpainted;4.50;10;gobelin,archer,fantasy;;
+Dragon Rouge;;Impression 3D;;;;;Fantasy;Dragon;;Gigantesque;Chaotique Neutre;Montagne,Grotte;wip;;1;dragon,boss,epic;En cours de peinture - base rouge faite;
 `;
 
 function escapeCSVField(field: string): string {
@@ -88,6 +89,7 @@ export function exportToCSV(figurines: Figurine[]): string {
   for (const fig of figurines) {
     const row = [
       escapeCSVField(fig.name || ''),
+      escapeCSVField(fig.original_name || ''),
       escapeCSVField(fig.category || ''),
       escapeCSVField(fig.brand || ''),
       escapeCSVField(fig.game || ''),
@@ -164,6 +166,7 @@ export function parseCSV(csvContent: string): FigurineInput[] {
 
     const figurine: FigurineInput = {
       name,
+      original_name: row['original_name'] || '',
       category: row['category'] || '',
       brand: row['brand'] || '',
       game: row['game'] || '',

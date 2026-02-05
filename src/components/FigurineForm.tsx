@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Upload, Camera, Plus, PlusCircle } from 'lucide-react';
+import { X, Upload, Camera, Plus, PlusCircle, Link } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
 import type { Figurine, FigurineInput } from '../types';
 import { getSubspeciesForSpecies } from '../types';
@@ -78,6 +78,7 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
 
   const emptyForm: FigurineInput = {
     name: '',
+    original_name: '',
     category: '',
     brand: '',
     game: '',
@@ -99,6 +100,7 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
 
   const [form, setForm] = useState<FigurineInput>(figurine ? {
     name: figurine.name,
+    original_name: figurine.original_name || '',
     category: figurine.category || '',
     brand: figurine.brand || '',
     game: figurine.game || '',
@@ -183,6 +185,9 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
   const [newTag, setNewTag] = useState('');
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState('');
+  const [showUrlInput, setShowUrlInput] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -210,6 +215,37 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
     const file = e.target.files?.[0];
     if (file) {
       handleImageUpload(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      handleImageUpload(file);
+    }
+  };
+
+  const handleUrlSubmit = () => {
+    const url = imageUrlInput.trim();
+    if (url) {
+      setForm(prev => ({ ...prev, image_url: url }));
+      setImageUrlInput('');
+      setShowUrlInput(false);
     }
   };
 
@@ -270,12 +306,22 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
             <label className="block text-sm font-medium text-gray-700 mb-2">Photo</label>
             <div className="flex gap-3 items-start">
               <div
-                className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden bg-gray-50"
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`w-24 h-24 rounded-xl border-2 border-dashed flex items-center justify-center overflow-hidden cursor-pointer transition ${
+                  dragOver
+                    ? 'border-primary-500 bg-primary-50'
+                    : 'border-gray-300 bg-gray-50 hover:border-gray-400'
+                }`}
               >
                 {form.image_url ? (
                   <img src={form.image_url} alt="Preview" className="w-full h-full object-cover" />
+                ) : uploading ? (
+                  <div className="animate-pulse text-gray-400 text-xs">Upload...</div>
                 ) : (
-                  <Camera className="text-gray-300" size={32} />
+                  <Camera className={dragOver ? 'text-primary-400' : 'text-gray-300'} size={32} />
                 )}
               </div>
               <div className="flex-1 space-y-2">
@@ -286,15 +332,55 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
                   onChange={handleFileChange}
                   className="hidden"
                 />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
-                >
-                  <Upload size={18} />
-                  {uploading ? 'Upload...' : 'Choisir une image'}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 text-sm"
+                  >
+                    <Upload size={16} />
+                    {uploading ? 'Upload...' : 'Fichier'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowUrlInput(!showUrlInput)}
+                    className={`flex items-center justify-center gap-2 px-3 py-2 border rounded-lg transition text-sm ${
+                      showUrlInput
+                        ? 'border-primary-500 bg-primary-50 text-primary-700'
+                        : 'border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Link size={16} />
+                    URL
+                  </button>
+                </div>
+                {showUrlInput && (
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={imageUrlInput}
+                      onChange={(e) => setImageUrlInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleUrlSubmit();
+                        }
+                      }}
+                      placeholder="https://..."
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleUrlSubmit}
+                      disabled={!imageUrlInput.trim()}
+                      className="px-3 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition disabled:opacity-50 text-sm"
+                    >
+                      OK
+                    </button>
+                  </div>
+                )}
+                <p className="text-xs text-gray-400">Glissez-déposez ou collez une URL</p>
                 {form.image_url && (
                   <button
                     type="button"
@@ -320,6 +406,20 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
               placeholder="Ex: Space Marine Intercessor"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
               required
+            />
+          </div>
+
+          {/* Nom original (anglais) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nom original (anglais)
+            </label>
+            <input
+              type="text"
+              value={form.original_name}
+              onChange={(e) => setForm(prev => ({ ...prev, original_name: e.target.value }))}
+              placeholder="Ex: Space Marine Intercessor (English name)"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
             />
           </div>
 

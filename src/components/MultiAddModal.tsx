@@ -114,6 +114,7 @@ export function MultiAddModal({ onSubmit, onClose, onUploadImage }: MultiAddModa
 
       figurines.push({
         name: item.name.trim(),
+        original_name: '',
         category: '',
         brand: '',
         game: '',

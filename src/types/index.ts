@@ -1,6 +1,7 @@
 export interface Figurine {
   id: string;
   name: string;
+  original_name: string;
   category: string;
   brand: string;
   game: string;

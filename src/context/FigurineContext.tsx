@@ -94,6 +94,7 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
 
         return {
           ...f,
+          original_name: f.original_name || '',
           category: f.category || '',
           brand: f.brand || '',
           game: f.game || '',

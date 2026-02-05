@@ -302,6 +302,8 @@ function CollectionPage() {
             selectionMode={selectionMode}
             selectedIds={selectedIds}
             onSelect={handleSelect}
+            sort={sort}
+            onSortChange={setSort}
           />
         )}
       </main>

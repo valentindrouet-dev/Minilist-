@@ -26,8 +26,13 @@ export function FigurineDetailModal({ figurine, onClose, onEdit }: FigurineDetai
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50">
-          <h2 className="text-lg font-semibold truncate pr-4">{figurine.name}</h2>
-          <div className="flex items-center gap-2">
+          <div className="truncate pr-4">
+            <h2 className="text-lg font-semibold">{figurine.name}</h2>
+            {figurine.original_name && (
+              <p className="text-sm text-gray-500 italic">{figurine.original_name}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={handleEdit}
               className="p-2 hover:bg-gray-200 rounded-lg transition text-gray-600"
@@ -47,15 +52,15 @@ export function FigurineDetailModal({ figurine, onClose, onEdit }: FigurineDetai
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           {/* Image */}
-          <div className="aspect-video bg-gray-100 relative">
+          <div className="bg-gray-100 relative min-h-[200px] max-h-[50vh] flex items-center justify-center">
             {figurine.image_url ? (
               <img
                 src={figurine.image_url}
                 alt={figurine.name}
-                className="w-full h-full object-contain"
+                className="max-w-full max-h-[50vh] object-contain"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-300">
+              <div className="w-full h-48 flex items-center justify-center text-gray-300">
                 <ImageIcon size={64} />
               </div>
             )}

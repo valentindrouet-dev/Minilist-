@@ -1,6 +1,6 @@
-import { Edit2, Trash2, Image as ImageIcon, Eye } from 'lucide-react';
+import { Edit2, Trash2, Image as ImageIcon, Eye, ChevronUp, ChevronDown } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
-import type { Figurine } from '../types';
+import type { Figurine, SortState, SortField } from '../types';
 
 interface FigurineTableProps {
   figurines: Figurine[];
@@ -11,6 +11,42 @@ interface FigurineTableProps {
   selectionMode?: boolean;
   selectedIds?: Set<string>;
   onSelect?: (id: string) => void;
+  sort?: SortState;
+  onSortChange?: (sort: SortState) => void;
+}
+
+interface SortableHeaderProps {
+  field: SortField;
+  label: string;
+  currentSort?: SortState;
+  onSort?: (sort: SortState) => void;
+  className?: string;
+}
+
+function SortableHeader({ field, label, currentSort, onSort, className = '' }: SortableHeaderProps) {
+  const isActive = currentSort?.field === field;
+  const isAsc = currentSort?.order === 'asc';
+
+  const handleClick = () => {
+    if (!onSort) return;
+    if (isActive) {
+      onSort({ field, order: isAsc ? 'desc' : 'asc' });
+    } else {
+      onSort({ field, order: 'asc' });
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`flex items-center gap-1 hover:text-gray-700 transition ${className}`}
+    >
+      {label}
+      {isActive && (
+        isAsc ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+      )}
+    </button>
+  );
 }
 
 export function FigurineTable({
@@ -22,6 +58,8 @@ export function FigurineTable({
   selectionMode = false,
   selectedIds = new Set(),
   onSelect,
+  sort,
+  onSortChange,
 }: FigurineTableProps) {
   const { presets } = usePresets();
 
@@ -69,10 +107,18 @@ export function FigurineTable({
       <div className="hidden md:grid md:grid-cols-12 gap-4 px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wide">
         {selectionMode && <div className="col-span-1"></div>}
         <div className={selectionMode ? "col-span-1" : "col-span-1"}></div>
-        <div className={selectionMode ? "col-span-2" : "col-span-3"}>Nom</div>
-        <div className="col-span-2">Marque</div>
-        <div className="col-span-2">Catégorie</div>
-        <div className="col-span-1">Statut</div>
+        <div className={selectionMode ? "col-span-2" : "col-span-3"}>
+          <SortableHeader field="name" label="Nom" currentSort={sort} onSort={onSortChange} />
+        </div>
+        <div className="col-span-2">
+          <SortableHeader field="brand" label="Marque" currentSort={sort} onSort={onSortChange} />
+        </div>
+        <div className="col-span-2">
+          <SortableHeader field="category" label="Catégorie" currentSort={sort} onSort={onSortChange} />
+        </div>
+        <div className="col-span-1">
+          <SortableHeader field="status" label="Statut" currentSort={sort} onSort={onSortChange} />
+        </div>
         <div className="col-span-1">Qté</div>
         <div className="col-span-2">Actions</div>
       </div>
