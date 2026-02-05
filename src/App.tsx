@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { FigurineProvider, useFigurines } from './context/FigurineContext';
 import { PresetProvider } from './context/PresetContext';
-import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineForm, StatsPage, ViewControls, PresetManager } from './components';
+import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineForm, StatsPage, ViewControls, PresetManager, ImportExportModal } from './components';
 import type { Figurine, FigurineInput } from './types';
 import { isSupabaseConfigured } from './services/supabase';
 import { AlertCircle, Download, Upload } from 'lucide-react';
@@ -32,6 +32,7 @@ function CollectionPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
+  const [showImportExport, setShowImportExport] = useState(false);
   const [editingFigurine, setEditingFigurine] = useState<Figurine | null>(null);
 
   const handleAddClick = () => {
@@ -85,7 +86,7 @@ function CollectionPage() {
 
   return (
     <>
-      <Header onAddClick={handleAddClick} onSettingsClick={() => setShowPresets(true)} />
+      <Header onAddClick={handleAddClick} onSettingsClick={() => setShowPresets(true)} onImportExportClick={() => setShowImportExport(true)} />
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         {/* Config warning */}
@@ -182,12 +183,18 @@ function CollectionPage() {
       {showPresets && (
         <PresetManager onClose={() => setShowPresets(false)} />
       )}
+
+      {/* Import/Export modal */}
+      {showImportExport && (
+        <ImportExportModal onClose={() => setShowImportExport(false)} />
+      )}
     </>
   );
 }
 
 function StatsPageWrapper() {
   const [showPresets, setShowPresets] = useState(false);
+  const [showImportExport, setShowImportExport] = useState(false);
 
   const handleAddClick = () => {
     window.location.href = '/?add=true';
@@ -195,12 +202,15 @@ function StatsPageWrapper() {
 
   return (
     <>
-      <Header onAddClick={handleAddClick} onSettingsClick={() => setShowPresets(true)} />
+      <Header onAddClick={handleAddClick} onSettingsClick={() => setShowPresets(true)} onImportExportClick={() => setShowImportExport(true)} />
       <main className="max-w-4xl mx-auto px-4 py-6">
         <StatsPage />
       </main>
       {showPresets && (
         <PresetManager onClose={() => setShowPresets(false)} />
+      )}
+      {showImportExport && (
+        <ImportExportModal onClose={() => setShowImportExport(false)} />
       )}
     </>
   );

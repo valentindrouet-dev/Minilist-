@@ -1,13 +1,14 @@
-import { Plus, Menu, X, Settings } from 'lucide-react';
+import { Plus, Menu, X, Settings, FileSpreadsheet } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 interface HeaderProps {
   onAddClick: () => void;
   onSettingsClick: () => void;
+  onImportExportClick: () => void;
 }
 
-export function Header({ onAddClick, onSettingsClick }: HeaderProps) {
+export function Header({ onAddClick, onSettingsClick, onImportExportClick }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -39,6 +40,13 @@ export function Header({ onAddClick, onSettingsClick }: HeaderProps) {
               Statistiques
             </Link>
             <button
+              onClick={onImportExportClick}
+              className="p-2 hover:bg-primary-500 rounded-lg transition"
+              title="Import / Export"
+            >
+              <FileSpreadsheet size={20} />
+            </button>
+            <button
               onClick={onSettingsClick}
               className="p-2 hover:bg-primary-500 rounded-lg transition"
               title="Gérer les presets"
@@ -56,6 +64,13 @@ export function Header({ onAddClick, onSettingsClick }: HeaderProps) {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center gap-2">
+            <button
+              onClick={onImportExportClick}
+              className="p-2 hover:bg-primary-500 rounded-lg"
+              title="Import / Export"
+            >
+              <FileSpreadsheet size={22} />
+            </button>
             <button
               onClick={onSettingsClick}
               className="p-2 hover:bg-primary-500 rounded-lg"

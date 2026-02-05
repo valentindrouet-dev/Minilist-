@@ -7,3 +7,4 @@ export { FigurineForm } from './FigurineForm';
 export { StatsPage } from './StatsPage';
 export { ViewControls } from './ViewControls';
 export { PresetManager } from './PresetManager';
+export { ImportExportModal } from './ImportExportModal';
