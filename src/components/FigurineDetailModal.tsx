@@ -79,10 +79,28 @@ export function FigurineDetailModal({ figurine, onClose, onEdit }: FigurineDetai
           <div className="p-4 space-y-4">
             {/* Main info grid */}
             <div className="grid grid-cols-2 gap-4">
+              {figurine.category && (
+                <div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Catégorie</div>
+                  <div className="font-medium">{figurine.category}</div>
+                </div>
+              )}
               {figurine.brand && (
                 <div>
                   <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Marque</div>
                   <div className="font-medium">{figurine.brand}</div>
+                </div>
+              )}
+              {figurine.game && (
+                <div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Jeu</div>
+                  <div className="font-medium">{figurine.game}</div>
+                </div>
+              )}
+              {figurine.collection && (
+                <div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Collection</div>
+                  <div className="font-medium">{figurine.collection}</div>
                 </div>
               )}
               {figurine.universe && (
@@ -91,22 +109,28 @@ export function FigurineDetailModal({ figurine, onClose, onEdit }: FigurineDetai
                   <div className="font-medium">{figurine.universe}</div>
                 </div>
               )}
-              {figurine.category && (
+              {figurine.species && (
                 <div>
-                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Catégorie</div>
-                  <div className="font-medium">{figurine.category}</div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Espèce</div>
+                  <div className="font-medium">{figurine.species}</div>
                 </div>
               )}
-              {figurine.subcategory && (
+              {figurine.subspecies && (
                 <div>
-                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Sous-catégorie</div>
-                  <div className="font-medium">{figurine.subcategory}</div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Sous-Espèce</div>
+                  <div className="font-medium">{figurine.subspecies}</div>
                 </div>
               )}
-              {figurine.scale && (
+              {figurine.size && (
                 <div>
-                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Échelle</div>
-                  <div className="font-medium">{figurine.scale}</div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Taille</div>
+                  <div className="font-medium">{figurine.size}</div>
+                </div>
+              )}
+              {figurine.habitat && (
+                <div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Habitat</div>
+                  <div className="font-medium">{figurine.habitat}</div>
                 </div>
               )}
               <div>

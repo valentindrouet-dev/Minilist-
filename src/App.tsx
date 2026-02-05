@@ -28,8 +28,10 @@ function CollectionPage() {
     uploadImage,
     allBrands,
     allCategories,
-    allSubcategories,
     allUniverses,
+    allSpecies,
+    allSubspecies,
+    allHabitats,
     allTags,
   } = useFigurines();
 
@@ -196,8 +198,10 @@ function CollectionPage() {
             onChange={setFilters}
             brands={allBrands}
             categories={allCategories}
-            subcategories={allSubcategories}
             universes={allUniverses}
+            species={allSpecies}
+            subspecies={allSubspecies}
+            habitats={allHabitats}
             tags={allTags}
           />
         </div>

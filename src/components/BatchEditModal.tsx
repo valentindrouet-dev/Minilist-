@@ -14,12 +14,14 @@ export function BatchEditModal({ selectedCount, onSubmit, onClose }: BatchEditMo
   const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState<BatchEditInput>({
-    brand: undefined,
     category: undefined,
-    subcategory: undefined,
+    brand: undefined,
     universe: undefined,
+    species: undefined,
+    subspecies: undefined,
+    size: undefined,
+    habitat: undefined,
     status: undefined,
-    scale: undefined,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,6 +68,21 @@ export function BatchEditModal({ selectedCount, onSubmit, onClose }: BatchEditMo
             Seuls les champs remplis seront modifiés. Laissez vide pour ne pas modifier.
           </p>
 
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
+            <select
+              value={form.category || ''}
+              onChange={(e) => setForm(prev => ({ ...prev, category: e.target.value || undefined }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+            >
+              <option value="">— Ne pas modifier —</option>
+              {presets.categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Brand */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Marque</label>
@@ -96,32 +113,62 @@ export function BatchEditModal({ selectedCount, onSubmit, onClose }: BatchEditMo
             </select>
           </div>
 
-          {/* Category */}
+          {/* Species */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Espèce</label>
             <select
-              value={form.category || ''}
-              onChange={(e) => setForm(prev => ({ ...prev, category: e.target.value || undefined }))}
+              value={form.species || ''}
+              onChange={(e) => setForm(prev => ({ ...prev, species: e.target.value || undefined }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
             >
               <option value="">— Ne pas modifier —</option>
-              {presets.categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
+              {presets.species.map(sp => (
+                <option key={sp} value={sp}>{sp}</option>
               ))}
             </select>
           </div>
 
-          {/* Subcategory */}
+          {/* Subspecies */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sous-catégorie</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Sous-Espèce</label>
             <select
-              value={form.subcategory || ''}
-              onChange={(e) => setForm(prev => ({ ...prev, subcategory: e.target.value || undefined }))}
+              value={form.subspecies || ''}
+              onChange={(e) => setForm(prev => ({ ...prev, subspecies: e.target.value || undefined }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
             >
               <option value="">— Ne pas modifier —</option>
-              {presets.subcategories.map(sub => (
+              {presets.subspecies.map(sub => (
                 <option key={sub} value={sub}>{sub}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Size */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Taille</label>
+            <select
+              value={form.size || ''}
+              onChange={(e) => setForm(prev => ({ ...prev, size: e.target.value || undefined }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+            >
+              <option value="">— Ne pas modifier —</option>
+              {presets.sizes.map(size => (
+                <option key={size} value={size}>{size}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Habitat */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Habitat</label>
+            <select
+              value={form.habitat || ''}
+              onChange={(e) => setForm(prev => ({ ...prev, habitat: e.target.value || undefined }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+            >
+              <option value="">— Ne pas modifier —</option>
+              {presets.habitats.map(habitat => (
+                <option key={habitat} value={habitat}>{habitat}</option>
               ))}
             </select>
           </div>
@@ -137,21 +184,6 @@ export function BatchEditModal({ selectedCount, onSubmit, onClose }: BatchEditMo
               <option value="">— Ne pas modifier —</option>
               {presets.statuses.map(status => (
                 <option key={status.value} value={status.value}>{status.label}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Scale */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Échelle</label>
-            <select
-              value={form.scale || ''}
-              onChange={(e) => setForm(prev => ({ ...prev, scale: e.target.value || undefined }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-            >
-              <option value="">— Ne pas modifier —</option>
-              {presets.scales.map(scale => (
-                <option key={scale} value={scale}>{scale}</option>
               ))}
             </select>
           </div>

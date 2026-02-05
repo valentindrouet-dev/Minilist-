@@ -1,9 +1,9 @@
 import { useFigurines } from '../context/FigurineContext';
 import { usePresets } from '../context/PresetContext';
-import { PieChart, BarChart3, Tag, Palette } from 'lucide-react';
+import { PieChart, BarChart3, Tag, Palette, Users, Globe } from 'lucide-react';
 
 export function StatsPage() {
-  const { figurines, allBrands, allCategories, allTags } = useFigurines();
+  const { figurines, allBrands, allCategories, allUniverses, allSpecies, allTags } = useFigurines();
   const { presets } = usePresets();
 
   // Calculate total with quantities
@@ -34,6 +34,22 @@ export function StatsPage() {
       .reduce((sum, f) => sum + (f.quantity || 1), 0),
   })).sort((a, b) => b.count - a.count);
 
+  // Sum quantities for each universe
+  const universeCounts = allUniverses.map(universe => ({
+    name: universe,
+    count: figurines
+      .filter(f => f.universe === universe)
+      .reduce((sum, f) => sum + (f.quantity || 1), 0),
+  })).sort((a, b) => b.count - a.count);
+
+  // Sum quantities for each species
+  const speciesCounts = allSpecies.map(species => ({
+    name: species,
+    count: figurines
+      .filter(f => f.species === species)
+      .reduce((sum, f) => sum + (f.quantity || 1), 0),
+  })).sort((a, b) => b.count - a.count);
+
   // Sum quantities for each tag
   const tagCounts = allTags.map(tag => ({
     name: tag,
@@ -44,6 +60,8 @@ export function StatsPage() {
 
   const maxBrandCount = Math.max(...brandCounts.map(b => b.count), 1);
   const maxCategoryCount = Math.max(...categoryCounts.map(c => c.count), 1);
+  const maxUniverseCount = Math.max(...universeCounts.map(u => u.count), 1);
+  const maxSpeciesCount = Math.max(...speciesCounts.map(s => s.count), 1);
 
   // Get painted count for progress (sum of quantities)
   const paintedCount = figurines
@@ -162,6 +180,58 @@ export function StatsPage() {
                   <div
                     className="h-full bg-green-500 rounded-full"
                     style={{ width: `${(category.count / maxCategoryCount) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* By Universe */}
+      {universeCounts.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Globe size={20} className="text-primary-500" />
+            Par univers
+          </h2>
+          <div className="space-y-3">
+            {universeCounts.slice(0, 10).map(universe => (
+              <div key={universe.name}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="font-medium">{universe.name}</span>
+                  <span className="text-gray-500">{universe.count}</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-500 rounded-full"
+                    style={{ width: `${(universe.count / maxUniverseCount) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* By Species */}
+      {speciesCounts.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Users size={20} className="text-primary-500" />
+            Par espèce
+          </h2>
+          <div className="space-y-3">
+            {speciesCounts.slice(0, 10).map(species => (
+              <div key={species.name}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="font-medium">{species.name}</span>
+                  <span className="text-gray-500">{species.count}</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-amber-500 rounded-full"
+                    style={{ width: `${(species.count / maxSpeciesCount) * 100}%` }}
                   />
                 </div>
               </div>

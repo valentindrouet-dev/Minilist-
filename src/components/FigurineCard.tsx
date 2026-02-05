@@ -130,7 +130,7 @@ export function FigurineCard({
             <>
               <p className="text-xs text-gray-400 mt-1">
                 {figurine.category}
-                {figurine.subcategory && ` • ${figurine.subcategory}`}
+                {figurine.species && ` • ${figurine.species}`}
               </p>
               {figurine.universe && (
                 <p className="text-xs text-gray-400">

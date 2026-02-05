@@ -8,20 +8,35 @@ interface FilterPanelProps {
   onChange: (filters: FilterState) => void;
   brands: string[];
   categories: string[];
-  subcategories: string[];
   universes: string[];
+  species: string[];
+  subspecies: string[];
+  habitats: string[];
   tags: string[];
 }
 
-export function FilterPanel({ filters, onChange, brands, categories, subcategories, universes, tags }: FilterPanelProps) {
+export function FilterPanel({
+  filters,
+  onChange,
+  brands,
+  categories,
+  universes,
+  species,
+  subspecies,
+  habitats,
+  tags
+}: FilterPanelProps) {
   const { presets } = usePresets();
   const [isOpen, setIsOpen] = useState(false);
 
   const activeFiltersCount = [
     filters.brand,
     filters.category,
-    filters.subcategory,
     filters.universe,
+    filters.species,
+    filters.subspecies,
+    filters.size,
+    filters.habitat,
     filters.status,
     filters.tags.length > 0,
   ].filter(Boolean).length;
@@ -31,8 +46,11 @@ export function FilterPanel({ filters, onChange, brands, categories, subcategori
       ...filters,
       brand: '',
       category: '',
-      subcategory: '',
       universe: '',
+      species: '',
+      subspecies: '',
+      size: '',
+      habitat: '',
       status: '',
       tags: [],
     });
@@ -100,42 +118,7 @@ export function FilterPanel({ filters, onChange, brands, categories, subcategori
             </div>
           </div>
 
-          {/* Brand & Universe filters */}
-          <div className="grid grid-cols-2 gap-3">
-            {brands.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Marque</label>
-                <select
-                  value={filters.brand}
-                  onChange={(e) => onChange({ ...filters, brand: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
-                >
-                  <option value="">Toutes</option>
-                  {brands.map(brand => (
-                    <option key={brand} value={brand}>{brand}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {universes.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Univers</label>
-                <select
-                  value={filters.universe}
-                  onChange={(e) => onChange({ ...filters, universe: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
-                >
-                  <option value="">Tous</option>
-                  {universes.map(universe => (
-                    <option key={universe} value={universe}>{universe}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-
-          {/* Category & Subcategory filters */}
+          {/* Catégorie & Marque filters */}
           <div className="grid grid-cols-2 gap-3">
             {categories.length > 0 && (
               <div>
@@ -153,22 +136,107 @@ export function FilterPanel({ filters, onChange, brands, categories, subcategori
               </div>
             )}
 
-            {subcategories.length > 0 && (
+            {brands.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sous-catégorie</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Marque</label>
                 <select
-                  value={filters.subcategory}
-                  onChange={(e) => onChange({ ...filters, subcategory: e.target.value })}
+                  value={filters.brand}
+                  onChange={(e) => onChange({ ...filters, brand: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
                 >
                   <option value="">Toutes</option>
-                  {subcategories.map(sub => (
-                    <option key={sub} value={sub}>{sub}</option>
+                  {brands.map(brand => (
+                    <option key={brand} value={brand}>{brand}</option>
                   ))}
                 </select>
               </div>
             )}
           </div>
+
+          {/* Univers & Espèce filters */}
+          <div className="grid grid-cols-2 gap-3">
+            {universes.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Univers</label>
+                <select
+                  value={filters.universe}
+                  onChange={(e) => onChange({ ...filters, universe: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
+                >
+                  <option value="">Tous</option>
+                  {universes.map(universe => (
+                    <option key={universe} value={universe}>{universe}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {species.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Espèce</label>
+                <select
+                  value={filters.species}
+                  onChange={(e) => onChange({ ...filters, species: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
+                >
+                  <option value="">Toutes</option>
+                  {species.map(sp => (
+                    <option key={sp} value={sp}>{sp}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Sous-Espèce & Taille filters */}
+          <div className="grid grid-cols-2 gap-3">
+            {subspecies.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sous-Espèce</label>
+                <select
+                  value={filters.subspecies}
+                  onChange={(e) => onChange({ ...filters, subspecies: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
+                >
+                  <option value="">Toutes</option>
+                  {subspecies.map(sub => (
+                    <option key={sub} value={sub}>{sub}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Taille</label>
+              <select
+                value={filters.size}
+                onChange={(e) => onChange({ ...filters, size: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
+              >
+                <option value="">Toutes</option>
+                {presets.sizes.map(size => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Habitat filter */}
+          {habitats.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Habitat</label>
+              <select
+                value={filters.habitat}
+                onChange={(e) => onChange({ ...filters, habitat: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
+              >
+                <option value="">Tous</option>
+                {habitats.map(habitat => (
+                  <option key={habitat} value={habitat}>{habitat}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Tags filter */}
           {tags.length > 0 && (

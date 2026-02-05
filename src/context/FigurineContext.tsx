@@ -19,10 +19,14 @@ interface FigurineContextType {
   deleteFigurine: (id: string) => Promise<void>;
   uploadImage: (file: File) => Promise<string>;
   refreshFigurines: () => Promise<void>;
-  allBrands: string[];
   allCategories: string[];
-  allSubcategories: string[];
+  allBrands: string[];
+  allGames: string[];
+  allCollections: string[];
   allUniverses: string[];
+  allSpecies: string[];
+  allSubspecies: string[];
+  allHabitats: string[];
   allTags: string[];
 }
 
@@ -30,10 +34,13 @@ const FigurineContext = createContext<FigurineContextType | undefined>(undefined
 
 const initialFilters: FilterState = {
   search: '',
-  brand: '',
   category: '',
-  subcategory: '',
+  brand: '',
   universe: '',
+  species: '',
+  subspecies: '',
+  size: '',
+  habitat: '',
   status: '',
   tags: [],
 };
@@ -77,8 +84,15 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
       // Ensure new fields have default values for old data
       const normalizedData = data.map(f => ({
         ...f,
-        subcategory: f.subcategory || '',
+        category: f.category || '',
+        brand: f.brand || '',
+        game: f.game || '',
+        collection: f.collection || '',
         universe: f.universe || '',
+        species: f.species || '',
+        subspecies: f.subspecies || '',
+        size: f.size || 'Normal',
+        habitat: f.habitat || '',
         quantity: f.quantity || 1,
       }));
       setFigurines(normalizedData);
@@ -98,28 +112,36 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
       const searchLower = filters.search.toLowerCase();
       const matchesSearch = !filters.search ||
         fig.name.toLowerCase().includes(searchLower) ||
-        fig.brand.toLowerCase().includes(searchLower) ||
-        fig.category.toLowerCase().includes(searchLower) ||
-        (fig.subcategory || '').toLowerCase().includes(searchLower) ||
+        (fig.category || '').toLowerCase().includes(searchLower) ||
+        (fig.brand || '').toLowerCase().includes(searchLower) ||
+        (fig.game || '').toLowerCase().includes(searchLower) ||
+        (fig.collection || '').toLowerCase().includes(searchLower) ||
         (fig.universe || '').toLowerCase().includes(searchLower) ||
-        fig.notes.toLowerCase().includes(searchLower) ||
+        (fig.species || '').toLowerCase().includes(searchLower) ||
+        (fig.subspecies || '').toLowerCase().includes(searchLower) ||
+        (fig.notes || '').toLowerCase().includes(searchLower) ||
         fig.tags.some(t => t.toLowerCase().includes(searchLower));
 
-      const matchesBrand = !filters.brand || fig.brand === filters.brand;
       const matchesCategory = !filters.category || fig.category === filters.category;
-      const matchesSubcategory = !filters.subcategory || fig.subcategory === filters.subcategory;
+      const matchesBrand = !filters.brand || fig.brand === filters.brand;
       const matchesUniverse = !filters.universe || fig.universe === filters.universe;
+      const matchesSpecies = !filters.species || fig.species === filters.species;
+      const matchesSubspecies = !filters.subspecies || fig.subspecies === filters.subspecies;
+      const matchesSize = !filters.size || fig.size === filters.size;
+      const matchesHabitat = !filters.habitat || fig.habitat === filters.habitat;
       const matchesStatus = !filters.status || fig.status === filters.status;
       const matchesTags = filters.tags.length === 0 ||
         filters.tags.every(tag => fig.tags.includes(tag));
 
-      return matchesSearch && matchesBrand && matchesCategory && matchesSubcategory && matchesUniverse && matchesStatus && matchesTags;
+      return matchesSearch && matchesCategory && matchesBrand && matchesUniverse &&
+             matchesSpecies && matchesSubspecies && matchesSize && matchesHabitat &&
+             matchesStatus && matchesTags;
     });
 
     // Sort
     result = [...result].sort((a, b) => {
-      let aVal: string | number = a[sort.field] || '';
-      let bVal: string | number = b[sort.field] || '';
+      let aVal: string | number = (a as unknown as Record<string, unknown>)[sort.field] as string || '';
+      let bVal: string | number = (b as unknown as Record<string, unknown>)[sort.field] as string || '';
 
       if (sort.field === 'created_at' || sort.field === 'updated_at') {
         aVal = new Date(aVal as string).getTime();
@@ -134,29 +156,49 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
     return result;
   }, [figurines, filters, sort]);
 
-  const allBrands = React.useMemo(() => {
-    const brands = new Set(figurines.map(f => f.brand).filter(Boolean));
-    return Array.from(brands).sort();
-  }, [figurines]);
-
   const allCategories = React.useMemo(() => {
-    const categories = new Set(figurines.map(f => f.category).filter(Boolean));
-    return Array.from(categories).sort();
+    const items = new Set(figurines.map(f => f.category).filter(Boolean));
+    return Array.from(items).sort((a, b) => a.localeCompare(b, 'fr'));
   }, [figurines]);
 
-  const allSubcategories = React.useMemo(() => {
-    const subcategories = new Set(figurines.map(f => f.subcategory).filter(Boolean));
-    return Array.from(subcategories).sort();
+  const allBrands = React.useMemo(() => {
+    const items = new Set(figurines.map(f => f.brand).filter(Boolean));
+    return Array.from(items).sort((a, b) => a.localeCompare(b, 'fr'));
+  }, [figurines]);
+
+  const allGames = React.useMemo(() => {
+    const items = new Set(figurines.map(f => f.game).filter(Boolean));
+    return Array.from(items).sort((a, b) => a.localeCompare(b, 'fr'));
+  }, [figurines]);
+
+  const allCollections = React.useMemo(() => {
+    const items = new Set(figurines.map(f => f.collection).filter(Boolean));
+    return Array.from(items).sort((a, b) => a.localeCompare(b, 'fr'));
   }, [figurines]);
 
   const allUniverses = React.useMemo(() => {
-    const universes = new Set(figurines.map(f => f.universe).filter(Boolean));
-    return Array.from(universes).sort();
+    const items = new Set(figurines.map(f => f.universe).filter(Boolean));
+    return Array.from(items).sort((a, b) => a.localeCompare(b, 'fr'));
+  }, [figurines]);
+
+  const allSpecies = React.useMemo(() => {
+    const items = new Set(figurines.map(f => f.species).filter(Boolean));
+    return Array.from(items).sort((a, b) => a.localeCompare(b, 'fr'));
+  }, [figurines]);
+
+  const allSubspecies = React.useMemo(() => {
+    const items = new Set(figurines.map(f => f.subspecies).filter(Boolean));
+    return Array.from(items).sort((a, b) => a.localeCompare(b, 'fr'));
+  }, [figurines]);
+
+  const allHabitats = React.useMemo(() => {
+    const items = new Set(figurines.map(f => f.habitat).filter(Boolean));
+    return Array.from(items).sort((a, b) => a.localeCompare(b, 'fr'));
   }, [figurines]);
 
   const allTags = React.useMemo(() => {
     const tags = new Set(figurines.flatMap(f => f.tags));
-    return Array.from(tags).sort();
+    return Array.from(tags).sort((a, b) => a.localeCompare(b, 'fr'));
   }, [figurines]);
 
   const addFigurine = async (input: FigurineInput): Promise<Figurine> => {
@@ -218,10 +260,14 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
         deleteFigurine,
         uploadImage,
         refreshFigurines,
-        allBrands,
         allCategories,
-        allSubcategories,
+        allBrands,
+        allGames,
+        allCollections,
         allUniverses,
+        allSpecies,
+        allSubspecies,
+        allHabitats,
         allTags,
       }}
     >

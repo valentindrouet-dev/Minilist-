@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Plus, Trash2, RotateCcw, Tag, Palette, Globe, Package, CheckCircle, Ruler } from 'lucide-react';
+import { X, Plus, Trash2, RotateCcw, Tag, Palette, Globe, Package, CheckCircle, Ruler, Users, MapPin } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
 import type { StatusPreset } from '../types';
 
@@ -7,15 +7,17 @@ interface PresetManagerProps {
   onClose: () => void;
 }
 
-type Tab = 'brands' | 'categories' | 'subcategories' | 'universes' | 'statuses' | 'scales';
+type Tab = 'categories' | 'brands' | 'universes' | 'species' | 'subspecies' | 'sizes' | 'habitats' | 'statuses';
 
 const TABS: { value: Tab; label: string; icon: React.ReactNode }[] = [
-  { value: 'brands', label: 'Marques', icon: <Package size={18} /> },
   { value: 'categories', label: 'Catégories', icon: <Tag size={18} /> },
-  { value: 'subcategories', label: 'Sous-catégories', icon: <Tag size={18} /> },
+  { value: 'brands', label: 'Marques', icon: <Package size={18} /> },
   { value: 'universes', label: 'Univers', icon: <Globe size={18} /> },
+  { value: 'species', label: 'Espèces', icon: <Users size={18} /> },
+  { value: 'subspecies', label: 'Sous-Espèces', icon: <Users size={18} /> },
+  { value: 'sizes', label: 'Tailles', icon: <Ruler size={18} /> },
+  { value: 'habitats', label: 'Habitats', icon: <MapPin size={18} /> },
   { value: 'statuses', label: 'Statuts', icon: <CheckCircle size={18} /> },
-  { value: 'scales', label: 'Échelles', icon: <Ruler size={18} /> },
 ];
 
 const COLOR_OPTIONS = [
@@ -43,16 +45,18 @@ const COLOR_OPTIONS = [
 export function PresetManager({ onClose }: PresetManagerProps) {
   const {
     presets,
-    addBrand, removeBrand,
     addCategory, removeCategory,
-    addSubcategory, removeSubcategory,
+    addBrand, removeBrand,
     addUniverse, removeUniverse,
+    addSpecies, removeSpecies,
+    addSubspecies, removeSubspecies,
+    addSize, removeSize,
+    addHabitat, removeHabitat,
     addStatus, removeStatus, updateStatus,
-    addScale, removeScale,
     resetPresets,
   } = usePresets();
 
-  const [activeTab, setActiveTab] = useState<Tab>('brands');
+  const [activeTab, setActiveTab] = useState<Tab>('categories');
   const [newItem, setNewItem] = useState('');
   const [newStatus, setNewStatus] = useState<StatusPreset>({ value: '', label: '', color: 'bg-gray-400' });
 
@@ -61,11 +65,13 @@ export function PresetManager({ onClose }: PresetManagerProps) {
     if (!item) return;
 
     switch (activeTab) {
-      case 'brands': addBrand(item); break;
       case 'categories': addCategory(item); break;
-      case 'subcategories': addSubcategory(item); break;
+      case 'brands': addBrand(item); break;
       case 'universes': addUniverse(item); break;
-      case 'scales': addScale(item); break;
+      case 'species': addSpecies(item); break;
+      case 'subspecies': addSubspecies(item); break;
+      case 'sizes': addSize(item); break;
+      case 'habitats': addHabitat(item); break;
     }
     setNewItem('');
   };
@@ -78,11 +84,13 @@ export function PresetManager({ onClose }: PresetManagerProps) {
 
   const handleRemoveItem = (item: string) => {
     switch (activeTab) {
-      case 'brands': removeBrand(item); break;
       case 'categories': removeCategory(item); break;
-      case 'subcategories': removeSubcategory(item); break;
+      case 'brands': removeBrand(item); break;
       case 'universes': removeUniverse(item); break;
-      case 'scales': removeScale(item); break;
+      case 'species': removeSpecies(item); break;
+      case 'subspecies': removeSubspecies(item); break;
+      case 'sizes': removeSize(item); break;
+      case 'habitats': removeHabitat(item); break;
     }
   };
 
@@ -94,11 +102,13 @@ export function PresetManager({ onClose }: PresetManagerProps) {
 
   const getCurrentItems = (): string[] => {
     switch (activeTab) {
-      case 'brands': return presets.brands;
       case 'categories': return presets.categories;
-      case 'subcategories': return presets.subcategories;
+      case 'brands': return presets.brands;
       case 'universes': return presets.universes;
-      case 'scales': return presets.scales;
+      case 'species': return presets.species;
+      case 'subspecies': return presets.subspecies;
+      case 'sizes': return presets.sizes;
+      case 'habitats': return presets.habitats;
       default: return [];
     }
   };

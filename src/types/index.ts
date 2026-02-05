@@ -1,43 +1,52 @@
 export interface Figurine {
   id: string;
   name: string;
-  brand: string;
   category: string;
-  subcategory: string;
+  brand: string;
+  game: string;
+  collection: string;
   universe: string;
-  tags: string[];
-  image_url: string | null;
+  species: string;
+  subspecies: string;
+  size: string;
+  habitat: string;
   status: string;
-  scale: string;
   quantity: number;
+  tags: string[];
   notes: string;
+  image_url: string | null;
   created_at: string;
   updated_at: string;
 }
 
 // Pour la modification par lot (champs optionnels)
 export interface BatchEditInput {
-  brand?: string;
   category?: string;
-  subcategory?: string;
+  brand?: string;
   universe?: string;
+  species?: string;
+  subspecies?: string;
+  size?: string;
+  habitat?: string;
   status?: string;
-  scale?: string;
 }
 
 export type FigurineInput = Omit<Figurine, 'id' | 'created_at' | 'updated_at'>;
 
 export interface FilterState {
   search: string;
-  brand: string;
   category: string;
-  subcategory: string;
+  brand: string;
   universe: string;
+  species: string;
+  subspecies: string;
+  size: string;
+  habitat: string;
   status: string;
   tags: string[];
 }
 
-export type SortField = 'name' | 'brand' | 'category' | 'subcategory' | 'universe' | 'status' | 'created_at' | 'updated_at';
+export type SortField = 'name' | 'category' | 'brand' | 'game' | 'collection' | 'universe' | 'species' | 'size' | 'status' | 'created_at' | 'updated_at';
 export type SortOrder = 'asc' | 'desc';
 
 export interface SortState {
@@ -52,63 +61,89 @@ export interface StatusPreset {
 }
 
 export interface Presets {
-  brands: string[];
   categories: string[];
-  subcategories: string[];
+  brands: string[];
   universes: string[];
+  species: string[];
+  subspecies: string[];
+  sizes: string[];
+  habitats: string[];
   statuses: StatusPreset[];
-  scales: string[];
 }
 
 export const DEFAULT_PRESETS: Presets = {
+  categories: [
+    'Figurines',
+    'Impression 3D',
+    'Jeu de Société',
+  ].sort((a, b) => a.localeCompare(b, 'fr')),
   brands: [
+    'Archon Studio',
+    'Cool Mini Or Not',
+    'Corvus Belli',
     'Games Workshop',
-    'Warhammer 40K',
-    'Age of Sigmar',
+    'Mantic Games',
+    'Privateer Press',
     'Reaper Miniatures',
     'Wizkids',
-    'Impression 3D',
-    'Privateer Press',
-    'Corvus Belli',
-    'Mantic Games',
     'Autre',
-  ],
-  categories: [
-    'Héros / Personnage',
-    'Infanterie',
-    'Cavalerie',
-    'Monstre / Créature',
-    'Véhicule',
-    'Décor / Terrain',
-    'PNJ',
-    'Joueur',
-    'Boss',
-    'Autre',
-  ],
-  subcategories: [
-    'Humain',
-    'Elfe',
-    'Nain',
-    'Orc',
-    'Mort-vivant',
-    'Démon',
-    'Animal',
-    'Dragon',
-    'Géant',
-    'Robot',
-    'Autre',
-  ],
+  ].sort((a, b) => a.localeCompare(b, 'fr')),
   universes: [
-    'Warhammer 40K',
     'Age of Sigmar',
     'D&D / Pathfinder',
-    'Star Wars',
+    'Fantasy',
     'Historique',
-    'Science-Fiction',
-    'Heroic Fantasy',
     'Horreur',
+    'Science-Fiction',
+    'Warhammer 40K',
+    'Zombicide',
     'Autre',
+  ].sort((a, b) => a.localeCompare(b, 'fr')),
+  species: [
+    'Animal',
+    'Démon',
+    'Dragon',
+    'Elfe',
+    'Géant',
+    'Humain',
+    'Hybride',
+    'Mort-Vivant',
+    'Nain',
+    'Orc',
+    'Robot',
+    'Autre',
+  ].sort((a, b) => a.localeCompare(b, 'fr')),
+  subspecies: [
+    'Elfe Noir',
+    'Gobelin',
+    'Ogre',
+    'Skaven',
+    'Squelette',
+    'Troll',
+    'Vampire',
+    'Zombie',
+    'Autre',
+  ].sort((a, b) => a.localeCompare(b, 'fr')),
+  sizes: [
+    'Minuscule',
+    'Petit',
+    'Normal',
+    'Grand',
+    'Très Grand',
+    'Gigantesque',
   ],
+  habitats: [
+    'Aquatique',
+    'Désert',
+    'Forêt',
+    'Grotte',
+    'Marais',
+    'Montagne',
+    'Plaine',
+    'Urbain',
+    'Volant',
+    'Autre',
+  ].sort((a, b) => a.localeCompare(b, 'fr')),
   statuses: [
     { value: 'unpainted', label: 'Non peinte', color: 'bg-gray-400' },
     { value: 'primed', label: 'Sous-couchée', color: 'bg-slate-400' },
@@ -116,25 +151,17 @@ export const DEFAULT_PRESETS: Presets = {
     { value: 'painted', label: 'Terminée', color: 'bg-green-400' },
     { value: 'based', label: 'Soclée', color: 'bg-emerald-500' },
   ],
-  scales: [
-    '6mm',
-    '10mm',
-    '15mm',
-    '25mm',
-    '28mm',
-    '32mm',
-    '54mm',
-    '75mm',
-    'Autre',
-  ],
 };
 
 export const SORT_OPTIONS: { value: SortField; label: string }[] = [
   { value: 'name', label: 'Nom' },
-  { value: 'brand', label: 'Marque' },
   { value: 'category', label: 'Catégorie' },
-  { value: 'subcategory', label: 'Sous-catégorie' },
+  { value: 'brand', label: 'Marque' },
+  { value: 'game', label: 'Jeu' },
+  { value: 'collection', label: 'Collection' },
   { value: 'universe', label: 'Univers' },
+  { value: 'species', label: 'Espèce' },
+  { value: 'size', label: 'Taille' },
   { value: 'status', label: 'Statut' },
   { value: 'created_at', label: 'Date d\'ajout' },
   { value: 'updated_at', label: 'Dernière modification' },

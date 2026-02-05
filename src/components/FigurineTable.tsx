@@ -145,7 +145,7 @@ export function FigurineTable({
               <div className="col-span-2 hidden md:block">
                 <span className="text-sm text-gray-600 truncate">
                   {figurine.category || '—'}
-                  {figurine.subcategory && <span className="text-gray-400"> / {figurine.subcategory}</span>}
+                  {figurine.species && <span className="text-gray-400"> / {figurine.species}</span>}
                 </span>
               </div>
 

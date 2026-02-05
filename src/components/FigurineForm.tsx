@@ -16,30 +16,38 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
 
   const emptyForm: FigurineInput = {
     name: '',
-    brand: '',
     category: '',
-    subcategory: '',
+    brand: '',
+    game: '',
+    collection: '',
     universe: '',
-    tags: [],
-    image_url: null,
+    species: '',
+    subspecies: '',
+    size: 'Normal',
+    habitat: '',
     status: presets.statuses[0]?.value || 'unpainted',
-    scale: '28mm',
     quantity: 1,
+    tags: [],
     notes: '',
+    image_url: null,
   };
 
   const [form, setForm] = useState<FigurineInput>(figurine ? {
     name: figurine.name,
-    brand: figurine.brand,
-    category: figurine.category,
-    subcategory: figurine.subcategory || '',
+    category: figurine.category || '',
+    brand: figurine.brand || '',
+    game: figurine.game || '',
+    collection: figurine.collection || '',
     universe: figurine.universe || '',
-    tags: figurine.tags,
-    image_url: figurine.image_url,
+    species: figurine.species || '',
+    subspecies: figurine.subspecies || '',
+    size: figurine.size || 'Normal',
+    habitat: figurine.habitat || '',
     status: figurine.status,
-    scale: figurine.scale,
     quantity: figurine.quantity || 1,
+    tags: figurine.tags,
     notes: figurine.notes,
+    image_url: figurine.image_url,
   } : emptyForm);
 
   const [newTag, setNewTag] = useState('');
@@ -185,37 +193,7 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
             />
           </div>
 
-          {/* Brand & Universe */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Marque</label>
-              <select
-                value={form.brand}
-                onChange={(e) => setForm(prev => ({ ...prev, brand: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-              >
-                <option value="">Sélectionner</option>
-                {presets.brands.map(brand => (
-                  <option key={brand} value={brand}>{brand}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Univers</label>
-              <select
-                value={form.universe}
-                onChange={(e) => setForm(prev => ({ ...prev, universe: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-              >
-                <option value="">Sélectionner</option>
-                {presets.universes.map(universe => (
-                  <option key={universe} value={universe}>{universe}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Category & Subcategory */}
+          {/* Catégorie & Marque */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
@@ -231,22 +209,118 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sous-catégorie</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Marque / Créateur</label>
               <select
-                value={form.subcategory}
-                onChange={(e) => setForm(prev => ({ ...prev, subcategory: e.target.value }))}
+                value={form.brand}
+                onChange={(e) => setForm(prev => ({ ...prev, brand: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
               >
                 <option value="">Sélectionner</option>
-                {presets.subcategories.map(sub => (
-                  <option key={sub} value={sub}>{sub}</option>
+                {presets.brands.map(brand => (
+                  <option key={brand} value={brand}>{brand}</option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Status, Scale & Quantity */}
+          {/* Jeu & Collection (champs libres) */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Jeu</label>
+              <input
+                type="text"
+                value={form.game}
+                onChange={(e) => setForm(prev => ({ ...prev, game: e.target.value }))}
+                placeholder="Ex: Warhammer 40K"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Collection</label>
+              <input
+                type="text"
+                value={form.collection}
+                onChange={(e) => setForm(prev => ({ ...prev, collection: e.target.value }))}
+                placeholder="Ex: Kill Team"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Univers & Espèce */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Univers</label>
+              <select
+                value={form.universe}
+                onChange={(e) => setForm(prev => ({ ...prev, universe: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              >
+                <option value="">Sélectionner</option>
+                {presets.universes.map(universe => (
+                  <option key={universe} value={universe}>{universe}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Espèce</label>
+              <select
+                value={form.species}
+                onChange={(e) => setForm(prev => ({ ...prev, species: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              >
+                <option value="">Sélectionner</option>
+                {presets.species.map(sp => (
+                  <option key={sp} value={sp}>{sp}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Sous-Espèce & Taille */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Sous-Espèce</label>
+              <select
+                value={form.subspecies}
+                onChange={(e) => setForm(prev => ({ ...prev, subspecies: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              >
+                <option value="">Sélectionner</option>
+                {presets.subspecies.map(sub => (
+                  <option key={sub} value={sub}>{sub}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Taille</label>
+              <select
+                value={form.size}
+                onChange={(e) => setForm(prev => ({ ...prev, size: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              >
+                {presets.sizes.map(size => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Habitat, Statut & Quantité */}
           <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Habitat</label>
+              <select
+                value={form.habitat}
+                onChange={(e) => setForm(prev => ({ ...prev, habitat: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              >
+                <option value="">Sélectionner</option>
+                {presets.habitats.map(habitat => (
+                  <option key={habitat} value={habitat}>{habitat}</option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
               <select
@@ -256,18 +330,6 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
               >
                 {presets.statuses.map(status => (
                   <option key={status.value} value={status.value}>{status.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Échelle</label>
-              <select
-                value={form.scale}
-                onChange={(e) => setForm(prev => ({ ...prev, scale: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-              >
-                {presets.scales.map(scale => (
-                  <option key={scale} value={scale}>{scale}</option>
                 ))}
               </select>
             </div>
