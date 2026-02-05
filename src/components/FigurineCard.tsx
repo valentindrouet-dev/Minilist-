@@ -5,6 +5,7 @@ import type { Figurine, GridSize } from '../types';
 interface FigurineCardProps {
   figurine: Figurine;
   gridSize: GridSize;
+  onView: (figurine: Figurine) => void;
   onEdit: (figurine: Figurine) => void;
   onDelete: (id: string) => void;
   selectionMode?: boolean;
@@ -15,6 +16,7 @@ interface FigurineCardProps {
 export function FigurineCard({
   figurine,
   gridSize,
+  onView,
   onEdit,
   onDelete,
   selectionMode = false,
@@ -37,13 +39,14 @@ export function FigurineCard({
   const handleClick = () => {
     if (selectionMode && onSelect) {
       onSelect(figurine.id);
+    } else {
+      onView(figurine);
     }
   };
 
   return (
     <div
-      className={`bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition group relative
-        ${selectionMode ? 'cursor-pointer' : ''}
+      className={`bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition group relative cursor-pointer
         ${isSelected ? 'border-primary-500 ring-2 ring-primary-200' : 'border-gray-200'}
       `}
       onClick={handleClick}

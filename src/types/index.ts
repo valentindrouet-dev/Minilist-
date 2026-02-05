@@ -149,3 +149,5 @@ export const GRID_SIZES = [
 ] as const;
 
 export type GridSize = typeof GRID_SIZES[number]['value'];
+
+export type ViewMode = 'grid' | 'table';

@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { FigurineProvider, useFigurines } from './context/FigurineContext';
 import { PresetProvider } from './context/PresetContext';
-import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineForm, StatsPage, ViewControls, PresetManager, ImportExportModal, BatchEditModal } from './components';
-import type { Figurine, FigurineInput, BatchEditInput } from './types';
+import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineTable, FigurineForm, FigurineDetailModal, StatsPage, ViewControls, PresetManager, ImportExportModal, BatchEditModal } from './components';
+import type { Figurine, FigurineInput, BatchEditInput, ViewMode } from './types';
 import { isSupabaseConfigured } from './services/supabase';
 import { AlertCircle, Download, Upload, CheckSquare, Edit3 } from 'lucide-react';
 import { figurineService } from './services/supabase';
+
+const VIEW_MODE_KEY = 'minilist_view_mode';
 
 function CollectionPage() {
   const {
@@ -36,6 +38,17 @@ function CollectionPage() {
   const [showImportExport, setShowImportExport] = useState(false);
   const [showBatchEdit, setShowBatchEdit] = useState(false);
   const [editingFigurine, setEditingFigurine] = useState<Figurine | null>(null);
+  const [viewingFigurine, setViewingFigurine] = useState<Figurine | null>(null);
+
+  // View mode (grid vs table)
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    return (localStorage.getItem(VIEW_MODE_KEY) as ViewMode) || 'grid';
+  });
+
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    localStorage.setItem(VIEW_MODE_KEY, mode);
+  };
 
   // Selection mode
   const [selectionMode, setSelectionMode] = useState(false);
@@ -44,6 +57,10 @@ function CollectionPage() {
   const handleAddClick = () => {
     setEditingFigurine(null);
     setShowForm(true);
+  };
+
+  const handleView = (figurine: Figurine) => {
+    setViewingFigurine(figurine);
   };
 
   const handleEdit = (figurine: Figurine) => {
@@ -122,6 +139,9 @@ function CollectionPage() {
     setSelectionMode(false);
   };
 
+  // Calculate total with quantities
+  const totalFigurines = filteredFigurines.reduce((sum, f) => sum + (f.quantity || 1), 0);
+
   return (
     <>
       <Header onAddClick={handleAddClick} onSettingsClick={() => setShowPresets(true)} onImportExportClick={() => setShowImportExport(true)} />
@@ -186,7 +206,8 @@ function CollectionPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
             <div className="text-sm text-gray-500">
-              {filteredFigurines.length} figurine{filteredFigurines.length !== 1 ? 's' : ''}
+              {totalFigurines} figurine{totalFigurines !== 1 ? 's' : ''}
+              {filteredFigurines.length !== totalFigurines && ` (${filteredFigurines.length} entrées)`}
               {filters.search && ` pour "${filters.search}"`}
             </div>
             {/* Selection mode toggle */}
@@ -207,6 +228,8 @@ function CollectionPage() {
             onGridSizeChange={setGridSize}
             sort={sort}
             onSortChange={setSort}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
           />
         </div>
 
@@ -244,18 +267,41 @@ function CollectionPage() {
           </div>
         )}
 
-        {/* Grid */}
-        <FigurineGrid
-          figurines={filteredFigurines}
-          loading={loading}
-          gridSize={gridSize}
-          onEdit={handleEdit}
-          onDelete={deleteFigurine}
-          selectionMode={selectionMode}
-          selectedIds={selectedIds}
-          onSelect={handleSelect}
-        />
+        {/* Grid or Table view */}
+        {viewMode === 'grid' ? (
+          <FigurineGrid
+            figurines={filteredFigurines}
+            loading={loading}
+            gridSize={gridSize}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={deleteFigurine}
+            selectionMode={selectionMode}
+            selectedIds={selectedIds}
+            onSelect={handleSelect}
+          />
+        ) : (
+          <FigurineTable
+            figurines={filteredFigurines}
+            loading={loading}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={deleteFigurine}
+            selectionMode={selectionMode}
+            selectedIds={selectedIds}
+            onSelect={handleSelect}
+          />
+        )}
       </main>
+
+      {/* Detail modal */}
+      {viewingFigurine && (
+        <FigurineDetailModal
+          figurine={viewingFigurine}
+          onClose={() => setViewingFigurine(null)}
+          onEdit={handleEdit}
+        />
+      )}
 
       {/* Form modal */}
       {showForm && (

@@ -6,6 +6,7 @@ interface FigurineGridProps {
   figurines: Figurine[];
   loading: boolean;
   gridSize: GridSize;
+  onView: (figurine: Figurine) => void;
   onEdit: (figurine: Figurine) => void;
   onDelete: (id: string) => void;
   selectionMode?: boolean;
@@ -17,6 +18,7 @@ export function FigurineGrid({
   figurines,
   loading,
   gridSize,
+  onView,
   onEdit,
   onDelete,
   selectionMode = false,
@@ -65,6 +67,7 @@ export function FigurineGrid({
           key={figurine.id}
           figurine={figurine}
           gridSize={gridSize}
+          onView={onView}
           onEdit={onEdit}
           onDelete={onDelete}
           selectionMode={selectionMode}

@@ -6,31 +6,49 @@ export function StatsPage() {
   const { figurines, allBrands, allCategories, allTags } = useFigurines();
   const { presets } = usePresets();
 
+  // Calculate total with quantities
+  const totalFigurines = figurines.reduce((sum, f) => sum + (f.quantity || 1), 0);
+  const totalEntries = figurines.length;
+
+  // Sum quantities for each status
   const statusCounts = presets.statuses.map(status => ({
     ...status,
-    count: figurines.filter(f => f.status === status.value).length,
+    count: figurines
+      .filter(f => f.status === status.value)
+      .reduce((sum, f) => sum + (f.quantity || 1), 0),
   }));
 
+  // Sum quantities for each brand
   const brandCounts = allBrands.map(brand => ({
     name: brand,
-    count: figurines.filter(f => f.brand === brand).length,
+    count: figurines
+      .filter(f => f.brand === brand)
+      .reduce((sum, f) => sum + (f.quantity || 1), 0),
   })).sort((a, b) => b.count - a.count);
 
+  // Sum quantities for each category
   const categoryCounts = allCategories.map(category => ({
     name: category,
-    count: figurines.filter(f => f.category === category).length,
+    count: figurines
+      .filter(f => f.category === category)
+      .reduce((sum, f) => sum + (f.quantity || 1), 0),
   })).sort((a, b) => b.count - a.count);
 
+  // Sum quantities for each tag
   const tagCounts = allTags.map(tag => ({
     name: tag,
-    count: figurines.filter(f => f.tags.includes(tag)).length,
+    count: figurines
+      .filter(f => f.tags.includes(tag))
+      .reduce((sum, f) => sum + (f.quantity || 1), 0),
   })).sort((a, b) => b.count - a.count);
 
   const maxBrandCount = Math.max(...brandCounts.map(b => b.count), 1);
   const maxCategoryCount = Math.max(...categoryCounts.map(c => c.count), 1);
 
-  // Get painted count for progress
-  const paintedCount = figurines.filter(f => f.status === 'painted' || f.status === 'based').length;
+  // Get painted count for progress (sum of quantities)
+  const paintedCount = figurines
+    .filter(f => f.status === 'painted' || f.status === 'based')
+    .reduce((sum, f) => sum + (f.quantity || 1), 0);
 
   if (figurines.length === 0) {
     return (
@@ -56,8 +74,11 @@ export function StatsPage() {
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           <div className="text-center p-4 bg-gray-50 rounded-xl">
-            <div className="text-3xl font-bold text-primary-600">{figurines.length}</div>
-            <div className="text-sm text-gray-500">Total</div>
+            <div className="text-3xl font-bold text-primary-600">{totalFigurines}</div>
+            <div className="text-sm text-gray-500">Figurines</div>
+            {totalEntries !== totalFigurines && (
+              <div className="text-xs text-gray-400">{totalEntries} entrées</div>
+            )}
           </div>
           {statusCounts.filter(s => s.count > 0).map(status => (
             <div key={status.value} className="text-center p-4 bg-gray-50 rounded-xl">
@@ -73,12 +94,12 @@ export function StatsPage() {
         </div>
 
         {/* Progress bar */}
-        {figurines.length > 0 && (
+        {totalFigurines > 0 && (
           <div className="mt-6">
             <div className="flex justify-between text-sm text-gray-500 mb-2">
               <span>Progression de peinture</span>
               <span>
-                {Math.round(paintedCount / figurines.length * 100)}%
+                {paintedCount} / {totalFigurines} ({Math.round(paintedCount / totalFigurines * 100)}%)
               </span>
             </div>
             <div className="h-4 bg-gray-200 rounded-full overflow-hidden flex">
@@ -87,7 +108,7 @@ export function StatsPage() {
                   <div
                     key={status.value}
                     className={`h-full ${status.color}`}
-                    style={{ width: `${(status.count / figurines.length) * 100}%` }}
+                    style={{ width: `${(status.count / totalFigurines) * 100}%` }}
                     title={`${status.label}: ${status.count}`}
                   />
                 )
@@ -162,7 +183,7 @@ export function StatsPage() {
                 key={tag.name}
                 className="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm"
                 style={{
-                  fontSize: `${Math.max(0.75, Math.min(1.25, 0.75 + (tag.count / figurines.length)))}rem`,
+                  fontSize: `${Math.max(0.75, Math.min(1.25, 0.75 + (tag.count / totalFigurines)))}rem`,
                 }}
               >
                 {tag.name} ({tag.count})
