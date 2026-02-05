@@ -1,18 +1,21 @@
-import type { Figurine } from '../types';
+import { GRID_SIZES, type Figurine, type GridSize } from '../types';
 import { FigurineCard } from './FigurineCard';
 import { Package } from 'lucide-react';
 
 interface FigurineGridProps {
   figurines: Figurine[];
   loading: boolean;
+  gridSize: GridSize;
   onEdit: (figurine: Figurine) => void;
   onDelete: (id: string) => void;
 }
 
-export function FigurineGrid({ figurines, loading, onEdit, onDelete }: FigurineGridProps) {
+export function FigurineGrid({ figurines, loading, gridSize, onEdit, onDelete }: FigurineGridProps) {
+  const gridCols = GRID_SIZES.find(s => s.value === gridSize)?.cols || GRID_SIZES[2].cols;
+
   if (loading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      <div className={`grid ${gridCols} gap-4`}>
         {Array.from({ length: 12 }).map((_, i) => (
           <div
             key={i}
@@ -44,11 +47,12 @@ export function FigurineGrid({ figurines, loading, onEdit, onDelete }: FigurineG
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+    <div className={`grid ${gridCols} gap-4`}>
       {figurines.map(figurine => (
         <FigurineCard
           key={figurine.id}
           figurine={figurine}
+          gridSize={gridSize}
           onEdit={onEdit}
           onDelete={onDelete}
         />

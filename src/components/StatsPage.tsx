@@ -1,11 +1,12 @@
 import { useFigurines } from '../context/FigurineContext';
-import { STATUSES } from '../types';
+import { usePresets } from '../context/PresetContext';
 import { PieChart, BarChart3, Tag, Palette } from 'lucide-react';
 
 export function StatsPage() {
   const { figurines, allBrands, allCategories, allTags } = useFigurines();
+  const { presets } = usePresets();
 
-  const statusCounts = STATUSES.map(status => ({
+  const statusCounts = presets.statuses.map(status => ({
     ...status,
     count: figurines.filter(f => f.status === status.value).length,
   }));
@@ -27,6 +28,9 @@ export function StatsPage() {
 
   const maxBrandCount = Math.max(...brandCounts.map(b => b.count), 1);
   const maxCategoryCount = Math.max(...categoryCounts.map(c => c.count), 1);
+
+  // Get painted count for progress
+  const paintedCount = figurines.filter(f => f.status === 'painted' || f.status === 'based').length;
 
   if (figurines.length === 0) {
     return (
@@ -50,20 +54,20 @@ export function StatsPage() {
           <PieChart size={20} className="text-primary-500" />
           Vue d'ensemble
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           <div className="text-center p-4 bg-gray-50 rounded-xl">
             <div className="text-3xl font-bold text-primary-600">{figurines.length}</div>
             <div className="text-sm text-gray-500">Total</div>
           </div>
-          {statusCounts.map(status => (
+          {statusCounts.filter(s => s.count > 0).map(status => (
             <div key={status.value} className="text-center p-4 bg-gray-50 rounded-xl">
-              <div className={`text-3xl font-bold ${
-                status.value === 'unpainted' ? 'text-gray-500' :
-                status.value === 'wip' ? 'text-yellow-500' : 'text-green-500'
-              }`}>
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <span className={`w-3 h-3 rounded-full ${status.color}`} />
+              </div>
+              <div className="text-2xl font-bold text-gray-700">
                 {status.count}
               </div>
-              <div className="text-sm text-gray-500">{status.label}</div>
+              <div className="text-xs text-gray-500">{status.label}</div>
             </div>
           ))}
         </div>
@@ -74,7 +78,7 @@ export function StatsPage() {
             <div className="flex justify-between text-sm text-gray-500 mb-2">
               <span>Progression de peinture</span>
               <span>
-                {Math.round((statusCounts.find(s => s.value === 'painted')?.count || 0) / figurines.length * 100)}%
+                {Math.round(paintedCount / figurines.length * 100)}%
               </span>
             </div>
             <div className="h-4 bg-gray-200 rounded-full overflow-hidden flex">
@@ -82,10 +86,7 @@ export function StatsPage() {
                 status.count > 0 && (
                   <div
                     key={status.value}
-                    className={`h-full ${
-                      status.value === 'unpainted' ? 'bg-gray-400' :
-                      status.value === 'wip' ? 'bg-yellow-400' : 'bg-green-400'
-                    }`}
+                    className={`h-full ${status.color}`}
                     style={{ width: `${(status.count / figurines.length) * 100}%` }}
                     title={`${status.label}: ${status.count}`}
                   />

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { FigurineProvider, useFigurines } from './context/FigurineContext';
-import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineForm, StatsPage } from './components';
+import { PresetProvider } from './context/PresetContext';
+import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineForm, StatsPage, ViewControls, PresetManager } from './components';
 import type { Figurine, FigurineInput } from './types';
 import { isSupabaseConfigured } from './services/supabase';
 import { AlertCircle, Download, Upload } from 'lucide-react';
@@ -14,16 +15,23 @@ function CollectionPage() {
     error,
     filters,
     setFilters,
+    sort,
+    setSort,
+    gridSize,
+    setGridSize,
     addFigurine,
     updateFigurine,
     deleteFigurine,
     uploadImage,
     allBrands,
     allCategories,
+    allSubcategories,
+    allUniverses,
     allTags,
   } = useFigurines();
 
   const [showForm, setShowForm] = useState(false);
+  const [showPresets, setShowPresets] = useState(false);
   const [editingFigurine, setEditingFigurine] = useState<Figurine | null>(null);
 
   const handleAddClick = () => {
@@ -77,7 +85,7 @@ function CollectionPage() {
 
   return (
     <>
-      <Header onAddClick={handleAddClick} />
+      <Header onAddClick={handleAddClick} onSettingsClick={() => setShowPresets(true)} />
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         {/* Config warning */}
@@ -122,27 +130,38 @@ function CollectionPage() {
           <SearchBar
             value={filters.search}
             onChange={(search) => setFilters(prev => ({ ...prev, search }))}
-            placeholder="Rechercher par nom, marque, catégorie, tag..."
+            placeholder="Rechercher par nom, marque, catégorie, univers, tag..."
           />
           <FilterPanel
             filters={filters}
             onChange={setFilters}
             brands={allBrands}
             categories={allCategories}
+            subcategories={allSubcategories}
+            universes={allUniverses}
             tags={allTags}
           />
         </div>
 
-        {/* Results count */}
-        <div className="text-sm text-gray-500 mb-4">
-          {filteredFigurines.length} figurine{filteredFigurines.length !== 1 ? 's' : ''}
-          {filters.search && ` pour "${filters.search}"`}
+        {/* View controls & Results count */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <div className="text-sm text-gray-500">
+            {filteredFigurines.length} figurine{filteredFigurines.length !== 1 ? 's' : ''}
+            {filters.search && ` pour "${filters.search}"`}
+          </div>
+          <ViewControls
+            gridSize={gridSize}
+            onGridSizeChange={setGridSize}
+            sort={sort}
+            onSortChange={setSort}
+          />
         </div>
 
         {/* Grid */}
         <FigurineGrid
           figurines={filteredFigurines}
           loading={loading}
+          gridSize={gridSize}
           onEdit={handleEdit}
           onDelete={deleteFigurine}
         />
@@ -158,21 +177,31 @@ function CollectionPage() {
           existingTags={allTags}
         />
       )}
+
+      {/* Preset manager modal */}
+      {showPresets && (
+        <PresetManager onClose={() => setShowPresets(false)} />
+      )}
     </>
   );
 }
 
 function StatsPageWrapper() {
+  const [showPresets, setShowPresets] = useState(false);
+
   const handleAddClick = () => {
     window.location.href = '/?add=true';
   };
 
   return (
     <>
-      <Header onAddClick={handleAddClick} />
+      <Header onAddClick={handleAddClick} onSettingsClick={() => setShowPresets(true)} />
       <main className="max-w-4xl mx-auto px-4 py-6">
         <StatsPage />
       </main>
+      {showPresets && (
+        <PresetManager onClose={() => setShowPresets(false)} />
+      )}
     </>
   );
 }
@@ -180,14 +209,16 @@ function StatsPageWrapper() {
 function App() {
   return (
     <BrowserRouter>
-      <FigurineProvider>
-        <div className="min-h-screen bg-gray-50">
-          <Routes>
-            <Route path="/" element={<CollectionPage />} />
-            <Route path="/stats" element={<StatsPageWrapper />} />
-          </Routes>
-        </div>
-      </FigurineProvider>
+      <PresetProvider>
+        <FigurineProvider>
+          <div className="min-h-screen bg-gray-50">
+            <Routes>
+              <Route path="/" element={<CollectionPage />} />
+              <Route path="/stats" element={<StatsPageWrapper />} />
+            </Routes>
+          </div>
+        </FigurineProvider>
+      </PresetProvider>
     </BrowserRouter>
   );
 }

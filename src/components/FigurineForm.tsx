@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Upload, Camera, Plus } from 'lucide-react';
-import { BRANDS, CATEGORIES, STATUSES, SCALES, type Figurine, type FigurineInput } from '../types';
+import { usePresets } from '../context/PresetContext';
+import type { Figurine, FigurineInput } from '../types';
 
 interface FigurineFormProps {
   figurine?: Figurine | null;
@@ -10,22 +11,28 @@ interface FigurineFormProps {
   existingTags: string[];
 }
 
-const emptyForm: FigurineInput = {
-  name: '',
-  brand: '',
-  category: '',
-  tags: [],
-  image_url: null,
-  status: 'unpainted',
-  scale: '28mm',
-  notes: '',
-};
-
 export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, existingTags }: FigurineFormProps) {
+  const { presets } = usePresets();
+
+  const emptyForm: FigurineInput = {
+    name: '',
+    brand: '',
+    category: '',
+    subcategory: '',
+    universe: '',
+    tags: [],
+    image_url: null,
+    status: presets.statuses[0]?.value || 'unpainted',
+    scale: '28mm',
+    notes: '',
+  };
+
   const [form, setForm] = useState<FigurineInput>(figurine ? {
     name: figurine.name,
     brand: figurine.brand,
     category: figurine.category,
+    subcategory: figurine.subcategory || '',
+    universe: figurine.universe || '',
     tags: figurine.tags,
     image_url: figurine.image_url,
     status: figurine.status,
@@ -176,34 +183,64 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
             />
           </div>
 
-          {/* Brand */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Marque</label>
-            <select
-              value={form.brand}
-              onChange={(e) => setForm(prev => ({ ...prev, brand: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-            >
-              <option value="">Sélectionner une marque</option>
-              {BRANDS.map(brand => (
-                <option key={brand} value={brand}>{brand}</option>
-              ))}
-            </select>
+          {/* Brand & Universe */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Marque</label>
+              <select
+                value={form.brand}
+                onChange={(e) => setForm(prev => ({ ...prev, brand: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              >
+                <option value="">Sélectionner</option>
+                {presets.brands.map(brand => (
+                  <option key={brand} value={brand}>{brand}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Univers</label>
+              <select
+                value={form.universe}
+                onChange={(e) => setForm(prev => ({ ...prev, universe: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              >
+                <option value="">Sélectionner</option>
+                {presets.universes.map(universe => (
+                  <option key={universe} value={universe}>{universe}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          {/* Category */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
-            <select
-              value={form.category}
-              onChange={(e) => setForm(prev => ({ ...prev, category: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-            >
-              <option value="">Sélectionner une catégorie</option>
-              {CATEGORIES.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
+          {/* Category & Subcategory */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
+              <select
+                value={form.category}
+                onChange={(e) => setForm(prev => ({ ...prev, category: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              >
+                <option value="">Sélectionner</option>
+                {presets.categories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Sous-catégorie</label>
+              <select
+                value={form.subcategory}
+                onChange={(e) => setForm(prev => ({ ...prev, subcategory: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              >
+                <option value="">Sélectionner</option>
+                {presets.subcategories.map(sub => (
+                  <option key={sub} value={sub}>{sub}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Status & Scale */}
@@ -212,10 +249,10 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
               <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
               <select
                 value={form.status}
-                onChange={(e) => setForm(prev => ({ ...prev, status: e.target.value as FigurineInput['status'] }))}
+                onChange={(e) => setForm(prev => ({ ...prev, status: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
               >
-                {STATUSES.map(status => (
+                {presets.statuses.map(status => (
                   <option key={status.value} value={status.value}>{status.label}</option>
                 ))}
               </select>
@@ -227,7 +264,7 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
                 onChange={(e) => setForm(prev => ({ ...prev, scale: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
               >
-                {SCALES.map(scale => (
+                {presets.scales.map(scale => (
                   <option key={scale} value={scale}>{scale}</option>
                 ))}
               </select>

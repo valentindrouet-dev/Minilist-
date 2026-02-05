@@ -1,21 +1,27 @@
 import { Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
-import { STATUSES, type FilterState } from '../types';
+import { usePresets } from '../context/PresetContext';
+import type { FilterState } from '../types';
 
 interface FilterPanelProps {
   filters: FilterState;
   onChange: (filters: FilterState) => void;
   brands: string[];
   categories: string[];
+  subcategories: string[];
+  universes: string[];
   tags: string[];
 }
 
-export function FilterPanel({ filters, onChange, brands, categories, tags }: FilterPanelProps) {
+export function FilterPanel({ filters, onChange, brands, categories, subcategories, universes, tags }: FilterPanelProps) {
+  const { presets } = usePresets();
   const [isOpen, setIsOpen] = useState(false);
 
   const activeFiltersCount = [
     filters.brand,
     filters.category,
+    filters.subcategory,
+    filters.universe,
     filters.status,
     filters.tags.length > 0,
   ].filter(Boolean).length;
@@ -25,6 +31,8 @@ export function FilterPanel({ filters, onChange, brands, categories, tags }: Fil
       ...filters,
       brand: '',
       category: '',
+      subcategory: '',
+      universe: '',
       status: '',
       tags: [],
     });
@@ -72,7 +80,7 @@ export function FilterPanel({ filters, onChange, brands, categories, tags }: Fil
           <div className="mt-3">
             <label className="block text-sm font-medium text-gray-700 mb-2">Statut</label>
             <div className="flex flex-wrap gap-2">
-              {STATUSES.map(status => (
+              {presets.statuses.map(status => (
                 <button
                   key={status.value}
                   onClick={() => onChange({
@@ -92,39 +100,75 @@ export function FilterPanel({ filters, onChange, brands, categories, tags }: Fil
             </div>
           </div>
 
-          {/* Brand filter */}
-          {brands.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Marque</label>
-              <select
-                value={filters.brand}
-                onChange={(e) => onChange({ ...filters, brand: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-              >
-                <option value="">Toutes les marques</option>
-                {brands.map(brand => (
-                  <option key={brand} value={brand}>{brand}</option>
-                ))}
-              </select>
-            </div>
-          )}
+          {/* Brand & Universe filters */}
+          <div className="grid grid-cols-2 gap-3">
+            {brands.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Marque</label>
+                <select
+                  value={filters.brand}
+                  onChange={(e) => onChange({ ...filters, brand: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
+                >
+                  <option value="">Toutes</option>
+                  {brands.map(brand => (
+                    <option key={brand} value={brand}>{brand}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-          {/* Category filter */}
-          {categories.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Catégorie</label>
-              <select
-                value={filters.category}
-                onChange={(e) => onChange({ ...filters, category: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-              >
-                <option value="">Toutes les catégories</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-          )}
+            {universes.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Univers</label>
+                <select
+                  value={filters.universe}
+                  onChange={(e) => onChange({ ...filters, universe: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
+                >
+                  <option value="">Tous</option>
+                  {universes.map(universe => (
+                    <option key={universe} value={universe}>{universe}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Category & Subcategory filters */}
+          <div className="grid grid-cols-2 gap-3">
+            {categories.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Catégorie</label>
+                <select
+                  value={filters.category}
+                  onChange={(e) => onChange({ ...filters, category: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
+                >
+                  <option value="">Toutes</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {subcategories.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sous-catégorie</label>
+                <select
+                  value={filters.subcategory}
+                  onChange={(e) => onChange({ ...filters, subcategory: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
+                >
+                  <option value="">Toutes</option>
+                  {subcategories.map(sub => (
+                    <option key={sub} value={sub}>{sub}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
 
           {/* Tags filter */}
           {tags.length > 0 && (

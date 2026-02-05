@@ -1,12 +1,13 @@
-import { Plus, Menu, X } from 'lucide-react';
+import { Plus, Menu, X, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 interface HeaderProps {
   onAddClick: () => void;
+  onSettingsClick: () => void;
 }
 
-export function Header({ onAddClick }: HeaderProps) {
+export function Header({ onAddClick, onSettingsClick }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -20,7 +21,7 @@ export function Header({ onAddClick }: HeaderProps) {
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-4">
+          <nav className="hidden md:flex items-center gap-2">
             <Link
               to="/"
               className={`px-3 py-2 rounded-lg transition ${
@@ -38,8 +39,15 @@ export function Header({ onAddClick }: HeaderProps) {
               Statistiques
             </Link>
             <button
+              onClick={onSettingsClick}
+              className="p-2 hover:bg-primary-500 rounded-lg transition"
+              title="Gérer les presets"
+            >
+              <Settings size={20} />
+            </button>
+            <button
               onClick={onAddClick}
-              className="flex items-center gap-2 bg-white text-primary-600 px-4 py-2 rounded-lg font-medium hover:bg-primary-50 transition"
+              className="flex items-center gap-2 bg-white text-primary-600 px-4 py-2 rounded-lg font-medium hover:bg-primary-50 transition ml-2"
             >
               <Plus size={20} />
               Ajouter
@@ -48,6 +56,13 @@ export function Header({ onAddClick }: HeaderProps) {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center gap-2">
+            <button
+              onClick={onSettingsClick}
+              className="p-2 hover:bg-primary-500 rounded-lg"
+              title="Paramètres"
+            >
+              <Settings size={22} />
+            </button>
             <button
               onClick={onAddClick}
               className="p-2 bg-white text-primary-600 rounded-lg"

@@ -5,3 +5,5 @@ export { FigurineCard } from './FigurineCard';
 export { FigurineGrid } from './FigurineGrid';
 export { FigurineForm } from './FigurineForm';
 export { StatsPage } from './StatsPage';
+export { ViewControls } from './ViewControls';
+export { PresetManager } from './PresetManager';
