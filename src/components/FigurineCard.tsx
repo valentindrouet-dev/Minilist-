@@ -1,4 +1,4 @@
-import { Edit2, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Edit2, Trash2, Image as ImageIcon, Check } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
 import type { Figurine, GridSize } from '../types';
 
@@ -7,11 +7,23 @@ interface FigurineCardProps {
   gridSize: GridSize;
   onEdit: (figurine: Figurine) => void;
   onDelete: (id: string) => void;
+  selectionMode?: boolean;
+  isSelected?: boolean;
+  onSelect?: (id: string) => void;
 }
 
-export function FigurineCard({ figurine, gridSize, onEdit, onDelete }: FigurineCardProps) {
+export function FigurineCard({
+  figurine,
+  gridSize,
+  onEdit,
+  onDelete,
+  selectionMode = false,
+  isSelected = false,
+  onSelect,
+}: FigurineCardProps) {
   const { presets } = usePresets();
   const status = presets.statuses.find(s => s.value === figurine.status);
+  const quantity = figurine.quantity || 1;
 
   const isCompact = gridSize === 'xs' || gridSize === 'sm';
   const isMedium = gridSize === 'md';
@@ -22,8 +34,31 @@ export function FigurineCard({ figurine, gridSize, onEdit, onDelete }: FigurineC
     }
   };
 
+  const handleClick = () => {
+    if (selectionMode && onSelect) {
+      onSelect(figurine.id);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition group">
+    <div
+      className={`bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition group relative
+        ${selectionMode ? 'cursor-pointer' : ''}
+        ${isSelected ? 'border-primary-500 ring-2 ring-primary-200' : 'border-gray-200'}
+      `}
+      onClick={handleClick}
+    >
+      {/* Selection checkbox */}
+      {selectionMode && (
+        <div
+          className={`absolute top-1 left-1 z-10 w-6 h-6 rounded-full flex items-center justify-center transition
+            ${isSelected ? 'bg-primary-500 text-white' : 'bg-white/80 border border-gray-300'}
+          `}
+        >
+          {isSelected && <Check size={14} strokeWidth={3} />}
+        </div>
+      )}
+
       {/* Image */}
       <div className="aspect-square bg-gray-100 relative overflow-hidden">
         {figurine.image_url ? (
@@ -39,28 +74,44 @@ export function FigurineCard({ figurine, gridSize, onEdit, onDelete }: FigurineC
           </div>
         )}
 
+        {/* Quantity badge - only show if quantity > 1 */}
+        {quantity > 1 && (
+          <div className={`absolute bottom-1 right-1 ${isCompact ? 'px-1.5 py-0.5 text-xs' : 'px-2 py-1 text-sm'} bg-black/70 text-white rounded-lg font-bold`}>
+            x{quantity}
+          </div>
+        )}
+
         {/* Status badge */}
-        {status && (
-          <div className={`absolute top-1 left-1 ${isCompact ? 'w-3 h-3' : 'px-2 py-1'} rounded-lg text-xs font-medium text-white ${status.color}`}>
+        {status && !selectionMode && (
+          <div className={`absolute top-1 ${selectionMode ? 'left-8' : 'left-1'} ${isCompact ? 'w-3 h-3' : 'px-2 py-1'} rounded-lg text-xs font-medium text-white ${status.color}`}>
             {!isCompact && status.label}
           </div>
         )}
 
-        {/* Action buttons (visible on hover) */}
-        <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition">
-          <button
-            onClick={() => onEdit(figurine)}
-            className={`${isCompact ? 'p-1' : 'p-2'} bg-white rounded-lg shadow-md hover:bg-gray-50 text-gray-700`}
-          >
-            <Edit2 size={isCompact ? 12 : 16} />
-          </button>
-          <button
-            onClick={handleDelete}
-            className={`${isCompact ? 'p-1' : 'p-2'} bg-white rounded-lg shadow-md hover:bg-red-50 text-red-500`}
-          >
-            <Trash2 size={isCompact ? 12 : 16} />
-          </button>
-        </div>
+        {/* Status badge in selection mode - repositioned */}
+        {status && selectionMode && (
+          <div className={`absolute top-1 left-8 ${isCompact ? 'w-3 h-3' : 'px-2 py-1'} rounded-lg text-xs font-medium text-white ${status.color}`}>
+            {!isCompact && status.label}
+          </div>
+        )}
+
+        {/* Action buttons (visible on hover, hidden in selection mode) */}
+        {!selectionMode && (
+          <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition">
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(figurine); }}
+              className={`${isCompact ? 'p-1' : 'p-2'} bg-white rounded-lg shadow-md hover:bg-gray-50 text-gray-700`}
+            >
+              <Edit2 size={isCompact ? 12 : 16} />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+              className={`${isCompact ? 'p-1' : 'p-2'} bg-white rounded-lg shadow-md hover:bg-red-50 text-red-500`}
+            >
+              <Trash2 size={isCompact ? 12 : 16} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Info - hidden on compact mode */}

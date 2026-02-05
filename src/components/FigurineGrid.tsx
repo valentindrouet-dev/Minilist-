@@ -8,9 +8,21 @@ interface FigurineGridProps {
   gridSize: GridSize;
   onEdit: (figurine: Figurine) => void;
   onDelete: (id: string) => void;
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onSelect?: (id: string) => void;
 }
 
-export function FigurineGrid({ figurines, loading, gridSize, onEdit, onDelete }: FigurineGridProps) {
+export function FigurineGrid({
+  figurines,
+  loading,
+  gridSize,
+  onEdit,
+  onDelete,
+  selectionMode = false,
+  selectedIds = new Set(),
+  onSelect,
+}: FigurineGridProps) {
   const gridCols = GRID_SIZES.find(s => s.value === gridSize)?.cols || GRID_SIZES[2].cols;
 
   if (loading) {
@@ -55,6 +67,9 @@ export function FigurineGrid({ figurines, loading, gridSize, onEdit, onDelete }:
           gridSize={gridSize}
           onEdit={onEdit}
           onDelete={onDelete}
+          selectionMode={selectionMode}
+          isSelected={selectedIds.has(figurine.id)}
+          onSelect={onSelect}
         />
       ))}
     </div>

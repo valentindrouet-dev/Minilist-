@@ -9,9 +9,20 @@ export interface Figurine {
   image_url: string | null;
   status: string;
   scale: string;
+  quantity: number;
   notes: string;
   created_at: string;
   updated_at: string;
+}
+
+// Pour la modification par lot (champs optionnels)
+export interface BatchEditInput {
+  brand?: string;
+  category?: string;
+  subcategory?: string;
+  universe?: string;
+  status?: string;
+  scale?: string;
 }
 
 export type FigurineInput = Omit<Figurine, 'id' | 'created_at' | 'updated_at'>;

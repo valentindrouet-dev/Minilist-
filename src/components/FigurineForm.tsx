@@ -24,6 +24,7 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
     image_url: null,
     status: presets.statuses[0]?.value || 'unpainted',
     scale: '28mm',
+    quantity: 1,
     notes: '',
   };
 
@@ -37,6 +38,7 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
     image_url: figurine.image_url,
     status: figurine.status,
     scale: figurine.scale,
+    quantity: figurine.quantity || 1,
     notes: figurine.notes,
   } : emptyForm);
 
@@ -243,8 +245,8 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
             </div>
           </div>
 
-          {/* Status & Scale */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Status, Scale & Quantity */}
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
               <select
@@ -268,6 +270,16 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
                   <option key={scale} value={scale}>{scale}</option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Quantité</label>
+              <input
+                type="number"
+                min="1"
+                value={form.quantity}
+                onChange={(e) => setForm(prev => ({ ...prev, quantity: Math.max(1, parseInt(e.target.value) || 1) }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              />
             </div>
           </div>
 

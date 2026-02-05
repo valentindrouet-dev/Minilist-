@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { FigurineProvider, useFigurines } from './context/FigurineContext';
 import { PresetProvider } from './context/PresetContext';
-import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineForm, StatsPage, ViewControls, PresetManager, ImportExportModal } from './components';
-import type { Figurine, FigurineInput } from './types';
+import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineForm, StatsPage, ViewControls, PresetManager, ImportExportModal, BatchEditModal } from './components';
+import type { Figurine, FigurineInput, BatchEditInput } from './types';
 import { isSupabaseConfigured } from './services/supabase';
-import { AlertCircle, Download, Upload } from 'lucide-react';
+import { AlertCircle, Download, Upload, CheckSquare, Edit3 } from 'lucide-react';
 import { figurineService } from './services/supabase';
 
 function CollectionPage() {
@@ -21,6 +21,7 @@ function CollectionPage() {
     setGridSize,
     addFigurine,
     updateFigurine,
+    batchUpdateFigurines,
     deleteFigurine,
     uploadImage,
     allBrands,
@@ -33,7 +34,12 @@ function CollectionPage() {
   const [showForm, setShowForm] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
   const [showImportExport, setShowImportExport] = useState(false);
+  const [showBatchEdit, setShowBatchEdit] = useState(false);
   const [editingFigurine, setEditingFigurine] = useState<Figurine | null>(null);
+
+  // Selection mode
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const handleAddClick = () => {
     setEditingFigurine(null);
@@ -82,6 +88,38 @@ function CollectionPage() {
       }
     };
     input.click();
+  };
+
+  // Selection handlers
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    setSelectedIds(new Set());
+  };
+
+  const handleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedIds(new Set(filteredFigurines.map(f => f.id)));
+  };
+
+  const deselectAll = () => {
+    setSelectedIds(new Set());
+  };
+
+  const handleBatchEdit = async (data: BatchEditInput) => {
+    await batchUpdateFigurines(Array.from(selectedIds), data);
+    setSelectedIds(new Set());
+    setSelectionMode(false);
   };
 
   return (
@@ -146,9 +184,23 @@ function CollectionPage() {
 
         {/* View controls & Results count */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-          <div className="text-sm text-gray-500">
-            {filteredFigurines.length} figurine{filteredFigurines.length !== 1 ? 's' : ''}
-            {filters.search && ` pour "${filters.search}"`}
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-gray-500">
+              {filteredFigurines.length} figurine{filteredFigurines.length !== 1 ? 's' : ''}
+              {filters.search && ` pour "${filters.search}"`}
+            </div>
+            {/* Selection mode toggle */}
+            <button
+              onClick={toggleSelectionMode}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                selectionMode
+                  ? 'bg-primary-100 text-primary-700'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              <CheckSquare size={16} />
+              {selectionMode ? 'Annuler' : 'Sélectionner'}
+            </button>
           </div>
           <ViewControls
             gridSize={gridSize}
@@ -158,6 +210,40 @@ function CollectionPage() {
           />
         </div>
 
+        {/* Selection bar */}
+        {selectionMode && (
+          <div className="mb-4 p-3 bg-primary-50 border border-primary-200 rounded-xl flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-primary-800">
+                {selectedIds.size} sélectionnée{selectedIds.size !== 1 ? 's' : ''}
+              </span>
+              <button
+                onClick={selectAll}
+                className="text-sm text-primary-600 hover:text-primary-800 underline"
+              >
+                Tout sélectionner
+              </button>
+              {selectedIds.size > 0 && (
+                <button
+                  onClick={deselectAll}
+                  className="text-sm text-primary-600 hover:text-primary-800 underline"
+                >
+                  Désélectionner
+                </button>
+              )}
+            </div>
+            {selectedIds.size > 0 && (
+              <button
+                onClick={() => setShowBatchEdit(true)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition"
+              >
+                <Edit3 size={16} />
+                Modifier la sélection
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Grid */}
         <FigurineGrid
           figurines={filteredFigurines}
@@ -165,6 +251,9 @@ function CollectionPage() {
           gridSize={gridSize}
           onEdit={handleEdit}
           onDelete={deleteFigurine}
+          selectionMode={selectionMode}
+          selectedIds={selectedIds}
+          onSelect={handleSelect}
         />
       </main>
 
@@ -187,6 +276,15 @@ function CollectionPage() {
       {/* Import/Export modal */}
       {showImportExport && (
         <ImportExportModal onClose={() => setShowImportExport(false)} />
+      )}
+
+      {/* Batch edit modal */}
+      {showBatchEdit && (
+        <BatchEditModal
+          selectedCount={selectedIds.size}
+          onSubmit={handleBatchEdit}
+          onClose={() => setShowBatchEdit(false)}
+        />
       )}
     </>
   );

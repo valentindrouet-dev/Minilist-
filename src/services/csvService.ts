@@ -11,15 +11,16 @@ const CSV_HEADERS = [
   'universe',
   'status',
   'scale',
+  'quantity',
   'tags',
   'notes',
   'image_url',
 ] as const;
 
-const CSV_TEMPLATE_CONTENT = `name;brand;category;subcategory;universe;status;scale;tags;notes;image_url
-Space Marine Intercessor;Games Workshop;Infanterie;Humain;Warhammer 40K;painted;28mm;space marine,ultramarines,sci-fi;Peint en bleu Ultramarine;
-Goblin Archer;Reaper Miniatures;Infanterie;Gobelin;D&D / Pathfinder;unpainted;28mm;gobelin,archer,fantasy;;
-Dragon Rouge;Impression 3D;Monstre / Créature;Dragon;D&D / Pathfinder;wip;75mm;dragon,boss,epic;En cours de peinture - base rouge faite;
+const CSV_TEMPLATE_CONTENT = `name;brand;category;subcategory;universe;status;scale;quantity;tags;notes;image_url
+Space Marine Intercessor;Games Workshop;Infanterie;Humain;Warhammer 40K;painted;28mm;5;space marine,ultramarines,sci-fi;Peint en bleu Ultramarine;
+Goblin Archer;Reaper Miniatures;Infanterie;Gobelin;D&D / Pathfinder;unpainted;28mm;10;gobelin,archer,fantasy;;
+Dragon Rouge;Impression 3D;Monstre / Créature;Dragon;D&D / Pathfinder;wip;75mm;1;dragon,boss,epic;En cours de peinture - base rouge faite;
 `;
 
 function escapeCSVField(field: string): string {
@@ -86,6 +87,7 @@ export function exportToCSV(figurines: Figurine[]): string {
       escapeCSVField(fig.universe || ''),
       escapeCSVField(fig.status || ''),
       escapeCSVField(fig.scale || ''),
+      escapeCSVField(String(fig.quantity || 1)),
       escapeCSVField((fig.tags || []).join(',')), // Virgules pour les tags car ; est le séparateur
       escapeCSVField(fig.notes || ''),
       escapeCSVField(fig.image_url || ''),
@@ -147,6 +149,7 @@ export function parseCSV(csvContent: string): FigurineInput[] {
       universe: row['universe'] || '',
       status: row['status'] || 'unpainted',
       scale: row['scale'] || '28mm',
+      quantity: parseInt(row['quantity']) || 1,
       tags,
       notes: row['notes'] || '',
       image_url: row['image_url'] || null,

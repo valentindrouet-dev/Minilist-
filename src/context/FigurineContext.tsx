@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import type { Figurine, FigurineInput, FilterState, SortState, GridSize } from '../types';
+import type { Figurine, FigurineInput, FilterState, SortState, GridSize, BatchEditInput } from '../types';
 import { figurineService } from '../services/supabase';
 
 interface FigurineContextType {
@@ -15,6 +15,7 @@ interface FigurineContextType {
   setGridSize: React.Dispatch<React.SetStateAction<GridSize>>;
   addFigurine: (input: FigurineInput) => Promise<Figurine>;
   updateFigurine: (id: string, input: Partial<FigurineInput>) => Promise<Figurine>;
+  batchUpdateFigurines: (ids: string[], input: BatchEditInput) => Promise<void>;
   deleteFigurine: (id: string) => Promise<void>;
   uploadImage: (file: File) => Promise<string>;
   refreshFigurines: () => Promise<void>;
@@ -78,6 +79,7 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
         ...f,
         subcategory: f.subcategory || '',
         universe: f.universe || '',
+        quantity: f.quantity || 1,
       }));
       setFigurines(normalizedData);
     } catch (err) {
@@ -169,6 +171,25 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
     return updated;
   };
 
+  const batchUpdateFigurines = async (ids: string[], input: BatchEditInput): Promise<void> => {
+    // Filter out undefined values
+    const cleanInput = Object.fromEntries(
+      Object.entries(input).filter(([, v]) => v !== undefined && v !== '')
+    );
+
+    if (Object.keys(cleanInput).length === 0) return;
+
+    // Update all figurines in parallel
+    const updatePromises = ids.map(id => figurineService.update(id, cleanInput));
+    const updatedFigurines = await Promise.all(updatePromises);
+
+    // Update local state
+    setFigurines(prev => prev.map(f => {
+      const updated = updatedFigurines.find(u => u.id === f.id);
+      return updated || f;
+    }));
+  };
+
   const deleteFigurine = async (id: string): Promise<void> => {
     await figurineService.delete(id);
     setFigurines(prev => prev.filter(f => f.id !== id));
@@ -193,6 +214,7 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
         setGridSize,
         addFigurine,
         updateFigurine,
+        batchUpdateFigurines,
         deleteFigurine,
         uploadImage,
         refreshFigurines,
