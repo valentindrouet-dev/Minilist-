@@ -55,7 +55,7 @@ export interface FilterState {
   tags: string[];
 }
 
-export type SortField = 'name' | 'category' | 'brand' | 'game' | 'collection' | 'universe' | 'species' | 'size' | 'alignment' | 'group' | 'status' | 'price' | 'created_at' | 'updated_at';
+export type SortField = 'name' | 'category' | 'brand' | 'game' | 'collection' | 'universe' | 'species' | 'size' | 'alignment' | 'group' | 'habitats' | 'status' | 'price' | 'created_at' | 'updated_at';
 export type SortOrder = 'asc' | 'desc';
 
 export interface SortState {
@@ -193,6 +193,7 @@ export const SORT_OPTIONS: { value: SortField; label: string }[] = [
   { value: 'species', label: 'Espèce' },
   { value: 'size', label: 'Taille' },
   { value: 'alignment', label: 'Alignement' },
+  { value: 'habitats', label: 'Habitat' },
   { value: 'status', label: 'Statut' },
   { value: 'price', label: 'Prix' },
   { value: 'created_at', label: 'Date d\'ajout' },

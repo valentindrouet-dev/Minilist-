@@ -1,14 +1,15 @@
-import { Plus, Menu, X, Settings, FileSpreadsheet } from 'lucide-react';
+import { Plus, Menu, X, Settings, FileSpreadsheet, PlusSquare } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 interface HeaderProps {
   onAddClick: () => void;
+  onMultiAddClick?: () => void;
   onSettingsClick: () => void;
   onImportExportClick: () => void;
 }
 
-export function Header({ onAddClick, onSettingsClick, onImportExportClick }: HeaderProps) {
+export function Header({ onAddClick, onMultiAddClick, onSettingsClick, onImportExportClick }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -53,13 +54,24 @@ export function Header({ onAddClick, onSettingsClick, onImportExportClick }: Hea
             >
               <Settings size={20} />
             </button>
-            <button
-              onClick={onAddClick}
-              className="flex items-center gap-2 bg-white text-primary-600 px-4 py-2 rounded-lg font-medium hover:bg-primary-50 transition ml-2"
-            >
-              <Plus size={20} />
-              Ajouter
-            </button>
+            <div className="flex items-center gap-1 ml-2">
+              <button
+                onClick={onAddClick}
+                className="flex items-center gap-2 bg-white text-primary-600 px-4 py-2 rounded-l-lg font-medium hover:bg-primary-50 transition"
+              >
+                <Plus size={20} />
+                Ajouter
+              </button>
+              {onMultiAddClick && (
+                <button
+                  onClick={onMultiAddClick}
+                  className="flex items-center gap-1 bg-white/90 text-primary-600 px-3 py-2 rounded-r-lg font-medium hover:bg-primary-50 transition border-l border-primary-200"
+                  title="Ajouts multiples"
+                >
+                  <PlusSquare size={20} />
+                </button>
+              )}
+            </div>
           </nav>
 
           {/* Mobile menu button */}
@@ -78,12 +90,24 @@ export function Header({ onAddClick, onSettingsClick, onImportExportClick }: Hea
             >
               <Settings size={22} />
             </button>
-            <button
-              onClick={onAddClick}
-              className="p-2 bg-white text-primary-600 rounded-lg"
-            >
-              <Plus size={24} />
-            </button>
+            <div className="flex items-center">
+              <button
+                onClick={onAddClick}
+                className="p-2 bg-white text-primary-600 rounded-l-lg"
+                title="Ajouter"
+              >
+                <Plus size={24} />
+              </button>
+              {onMultiAddClick && (
+                <button
+                  onClick={onMultiAddClick}
+                  className="p-2 bg-white/90 text-primary-600 rounded-r-lg border-l border-primary-200"
+                  title="Ajouts multiples"
+                >
+                  <PlusSquare size={22} />
+                </button>
+              )}
+            </div>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="p-2 hover:bg-primary-500 rounded-lg"

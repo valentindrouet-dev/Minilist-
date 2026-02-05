@@ -11,3 +11,4 @@ export { ViewControls } from './ViewControls';
 export { PresetManager } from './PresetManager';
 export { ImportExportModal } from './ImportExportModal';
 export { BatchEditModal } from './BatchEditModal';
+export { MultiAddModal } from './MultiAddModal';

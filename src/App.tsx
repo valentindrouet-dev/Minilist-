@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { FigurineProvider, useFigurines } from './context/FigurineContext';
 import { PresetProvider } from './context/PresetContext';
-import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineTable, FigurineForm, FigurineDetailModal, StatsPage, ViewControls, PresetManager, ImportExportModal, BatchEditModal } from './components';
+import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineTable, FigurineForm, FigurineDetailModal, StatsPage, ViewControls, PresetManager, ImportExportModal, BatchEditModal, MultiAddModal } from './components';
 import type { Figurine, FigurineInput, BatchEditInput, ViewMode } from './types';
 import { isSupabaseConfigured } from './services/supabase';
 import { AlertCircle, Download, Upload, CheckSquare, Edit3 } from 'lucide-react';
@@ -36,6 +36,7 @@ function CollectionPage() {
   } = useFigurines();
 
   const [showForm, setShowForm] = useState(false);
+  const [showMultiAdd, setShowMultiAdd] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
   const [showImportExport, setShowImportExport] = useState(false);
   const [showBatchEdit, setShowBatchEdit] = useState(false);
@@ -75,6 +76,12 @@ function CollectionPage() {
       await updateFigurine(editingFigurine.id, data);
     } else {
       await addFigurine(data);
+    }
+  };
+
+  const handleMultiAdd = async (items: FigurineInput[]) => {
+    for (const item of items) {
+      await addFigurine(item);
     }
   };
 
@@ -146,7 +153,7 @@ function CollectionPage() {
 
   return (
     <>
-      <Header onAddClick={handleAddClick} onSettingsClick={() => setShowPresets(true)} onImportExportClick={() => setShowImportExport(true)} />
+      <Header onAddClick={handleAddClick} onMultiAddClick={() => setShowMultiAdd(true)} onSettingsClick={() => setShowPresets(true)} onImportExportClick={() => setShowImportExport(true)} />
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         {/* Config warning */}
@@ -335,6 +342,15 @@ function CollectionPage() {
           selectedCount={selectedIds.size}
           onSubmit={handleBatchEdit}
           onClose={() => setShowBatchEdit(false)}
+        />
+      )}
+
+      {/* Multi add modal */}
+      {showMultiAdd && (
+        <MultiAddModal
+          onSubmit={handleMultiAdd}
+          onClose={() => setShowMultiAdd(false)}
+          onUploadImage={uploadImage}
         />
       )}
     </>
