@@ -143,6 +143,12 @@ export function FigurineDetailModal({ figurine, onClose, onEdit }: FigurineDetai
                 <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Quantité</div>
                 <div className="font-medium">{quantity}</div>
               </div>
+              {figurine.price != null && (
+                <div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Prix</div>
+                  <div className="font-medium">{figurine.price.toFixed(2)} €</div>
+                </div>
+              )}
             </div>
 
             {/* Habitats */}

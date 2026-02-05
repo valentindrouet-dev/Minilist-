@@ -17,16 +17,17 @@ const CSV_HEADERS = [
   'alignment',
   'habitats',
   'status',
+  'price',
   'quantity',
   'tags',
   'notes',
   'image_url',
 ] as const;
 
-const CSV_TEMPLATE_CONTENT = `name;category;brand;game;collection;group;universe;species;subspecies;size;alignment;habitats;status;quantity;tags;notes;image_url
-Space Marine Intercessor;Figurines;Games Workshop;Warhammer 40K;Kill Team;Ultramarines;Warhammer 40K;Humain;;Normal;Loyal Bon;;painted;5;space marine,ultramarines,sci-fi;Peint en bleu Ultramarine;
-Goblin Archer;Figurines;Reaper Miniatures;;Pathfinder Battles;;D&D / Pathfinder;Hybride;Gobelin;Petit;Chaotique Mauvais;Forêt;unpainted;10;gobelin,archer,fantasy;;
-Dragon Rouge;Impression 3D;;;;;Fantasy;Dragon;;Gigantesque;Chaotique Neutre;Montagne,Grotte;wip;1;dragon,boss,epic;En cours de peinture - base rouge faite;
+const CSV_TEMPLATE_CONTENT = `name;category;brand;game;collection;group;universe;species;subspecies;size;alignment;habitats;status;price;quantity;tags;notes;image_url
+Space Marine Intercessor;Figurines;Games Workshop;Warhammer 40K;Kill Team;Ultramarines;Warhammer 40K;Humain;;Normal;Loyal Bon;;painted;35.00;5;space marine,ultramarines,sci-fi;Peint en bleu Ultramarine;
+Goblin Archer;Figurines;Reaper Miniatures;;Pathfinder Battles;;D&D / Pathfinder;Hybride;Gobelin;Petit;Chaotique Mauvais;Forêt;unpainted;4.50;10;gobelin,archer,fantasy;;
+Dragon Rouge;Impression 3D;;;;;Fantasy;Dragon;;Gigantesque;Chaotique Neutre;Montagne,Grotte;wip;;1;dragon,boss,epic;En cours de peinture - base rouge faite;
 `;
 
 function escapeCSVField(field: string): string {
@@ -99,6 +100,7 @@ export function exportToCSV(figurines: Figurine[]): string {
       escapeCSVField(fig.alignment || ''),
       escapeCSVField((fig.habitats || []).join(',')), // Virgules pour les habitats
       escapeCSVField(fig.status || ''),
+      escapeCSVField(fig.price != null ? String(fig.price) : ''),
       escapeCSVField(String(fig.quantity || 1)),
       escapeCSVField((fig.tags || []).join(',')), // Virgules pour les tags car ; est le séparateur
       escapeCSVField(fig.notes || ''),
@@ -174,6 +176,7 @@ export function parseCSV(csvContent: string): FigurineInput[] {
       alignment: row['alignment'] || '',
       habitats,
       status: row['status'] || 'unpainted',
+      price: row['price'] ? parseFloat(row['price']) : null,
       quantity: parseInt(row['quantity']) || 1,
       tags,
       notes: row['notes'] || '',

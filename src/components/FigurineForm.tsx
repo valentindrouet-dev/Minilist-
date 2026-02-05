@@ -1,8 +1,66 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Upload, Camera, Plus } from 'lucide-react';
+import { X, Upload, Camera, Plus, PlusCircle } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
 import type { Figurine, FigurineInput } from '../types';
 import { getSubspeciesForSpecies } from '../types';
+
+// Quick add modal component
+interface QuickAddModalProps {
+  title: string;
+  onAdd: (value: string) => void;
+  onClose: () => void;
+}
+
+function QuickAddModal({ title, onAdd, onClose }: QuickAddModalProps) {
+  const [value, setValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (value.trim()) {
+      onAdd(value.trim());
+      onClose();
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl p-4 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+        <h3 className="font-semibold text-lg mb-3">{title}</h3>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            ref={inputRef}
+            type="text"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="Entrez une valeur..."
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={!value.trim()}
+              className="flex-1 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition disabled:opacity-50"
+            >
+              Ajouter
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 interface FigurineFormProps {
   figurine?: Figurine | null;
@@ -12,8 +70,11 @@ interface FigurineFormProps {
   existingTags: string[];
 }
 
+type QuickAddField = 'category' | 'brand' | 'universe' | 'species' | 'subspecies' | 'size' | 'alignment' | 'habitat' | null;
+
 export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, existingTags }: FigurineFormProps) {
-  const { presets } = usePresets();
+  const { presets, addCategory, addBrand, addUniverse, addSpecies, addSubspecies, addSize, addAlignment, addHabitat } = usePresets();
+  const [quickAddField, setQuickAddField] = useState<QuickAddField>(null);
 
   const emptyForm: FigurineInput = {
     name: '',
@@ -29,6 +90,7 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
     group: '',
     habitats: [],
     status: presets.statuses[0]?.value || 'unpainted',
+    price: null,
     quantity: 1,
     tags: [],
     notes: '',
@@ -49,6 +111,7 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
     group: figurine.group || '',
     habitats: figurine.habitats || [],
     status: figurine.status,
+    price: figurine.price,
     quantity: figurine.quantity || 1,
     tags: figurine.tags,
     notes: figurine.notes,
@@ -62,6 +125,59 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
         ? prev.habitats.filter(h => h !== habitat)
         : [...prev.habitats, habitat],
     }));
+  };
+
+  const handleQuickAdd = (value: string) => {
+    switch (quickAddField) {
+      case 'category':
+        addCategory(value);
+        setForm(prev => ({ ...prev, category: value }));
+        break;
+      case 'brand':
+        addBrand(value);
+        setForm(prev => ({ ...prev, brand: value }));
+        break;
+      case 'universe':
+        addUniverse(value);
+        setForm(prev => ({ ...prev, universe: value }));
+        break;
+      case 'species':
+        addSpecies(value);
+        setForm(prev => ({ ...prev, species: value, subspecies: '' }));
+        break;
+      case 'subspecies':
+        if (form.species) {
+          addSubspecies(form.species, value);
+          setForm(prev => ({ ...prev, subspecies: value }));
+        }
+        break;
+      case 'size':
+        addSize(value);
+        setForm(prev => ({ ...prev, size: value }));
+        break;
+      case 'alignment':
+        addAlignment(value);
+        setForm(prev => ({ ...prev, alignment: value }));
+        break;
+      case 'habitat':
+        addHabitat(value);
+        setForm(prev => ({ ...prev, habitats: [...prev.habitats, value] }));
+        break;
+    }
+  };
+
+  const getQuickAddTitle = (): string => {
+    switch (quickAddField) {
+      case 'category': return 'Ajouter une catégorie';
+      case 'brand': return 'Ajouter une marque';
+      case 'universe': return 'Ajouter un univers';
+      case 'species': return 'Ajouter une espèce';
+      case 'subspecies': return `Ajouter une sous-espèce (${form.species})`;
+      case 'size': return 'Ajouter une taille';
+      case 'alignment': return 'Ajouter un alignement';
+      case 'habitat': return 'Ajouter un habitat';
+      default: return '';
+    }
   };
 
   const [newTag, setNewTag] = useState('');
@@ -211,29 +327,49 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
-              <select
-                value={form.category}
-                onChange={(e) => setForm(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-              >
-                <option value="">Sélectionner</option>
-                {presets.categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+              <div className="flex gap-1">
+                <select
+                  value={form.category}
+                  onChange={(e) => setForm(prev => ({ ...prev, category: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                >
+                  <option value="">Sélectionner</option>
+                  {presets.categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setQuickAddField('category')}
+                  className="p-2 text-gray-500 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition"
+                  title="Ajouter une catégorie"
+                >
+                  <PlusCircle size={20} />
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Marque / Créateur</label>
-              <select
-                value={form.brand}
-                onChange={(e) => setForm(prev => ({ ...prev, brand: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-              >
-                <option value="">Sélectionner</option>
-                {presets.brands.map(brand => (
-                  <option key={brand} value={brand}>{brand}</option>
-                ))}
-              </select>
+              <div className="flex gap-1">
+                <select
+                  value={form.brand}
+                  onChange={(e) => setForm(prev => ({ ...prev, brand: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                >
+                  <option value="">Sélectionner</option>
+                  {presets.brands.map(brand => (
+                    <option key={brand} value={brand}>{brand}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setQuickAddField('brand')}
+                  className="p-2 text-gray-500 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition"
+                  title="Ajouter une marque"
+                >
+                  <PlusCircle size={20} />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -277,38 +413,58 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Univers</label>
-              <select
-                value={form.universe}
-                onChange={(e) => setForm(prev => ({ ...prev, universe: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-              >
-                <option value="">Sélectionner</option>
-                {presets.universes.map(universe => (
-                  <option key={universe} value={universe}>{universe}</option>
-                ))}
-              </select>
+              <div className="flex gap-1">
+                <select
+                  value={form.universe}
+                  onChange={(e) => setForm(prev => ({ ...prev, universe: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                >
+                  <option value="">Sélectionner</option>
+                  {presets.universes.map(universe => (
+                    <option key={universe} value={universe}>{universe}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setQuickAddField('universe')}
+                  className="p-2 text-gray-500 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition"
+                  title="Ajouter un univers"
+                >
+                  <PlusCircle size={20} />
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Espèce</label>
-              <select
-                value={form.species}
-                onChange={(e) => {
-                  const newSpecies = e.target.value;
-                  // Reset subspecies when species changes
-                  const newSubspecies = getSubspeciesForSpecies(presets, newSpecies);
-                  setForm(prev => ({
-                    ...prev,
-                    species: newSpecies,
-                    subspecies: newSubspecies.includes(prev.subspecies) ? prev.subspecies : '',
-                  }));
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-              >
-                <option value="">Sélectionner</option>
-                {presets.species.map(sp => (
-                  <option key={sp} value={sp}>{sp}</option>
-                ))}
-              </select>
+              <div className="flex gap-1">
+                <select
+                  value={form.species}
+                  onChange={(e) => {
+                    const newSpecies = e.target.value;
+                    // Reset subspecies when species changes
+                    const newSubspecies = getSubspeciesForSpecies(presets, newSpecies);
+                    setForm(prev => ({
+                      ...prev,
+                      species: newSpecies,
+                      subspecies: newSubspecies.includes(prev.subspecies) ? prev.subspecies : '',
+                    }));
+                  }}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                >
+                  <option value="">Sélectionner</option>
+                  {presets.species.map(sp => (
+                    <option key={sp} value={sp}>{sp}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setQuickAddField('species')}
+                  className="p-2 text-gray-500 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition"
+                  title="Ajouter une espèce"
+                >
+                  <PlusCircle size={20} />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -316,46 +472,77 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Sous-Espèce</label>
-              <select
-                value={form.subspecies}
-                onChange={(e) => setForm(prev => ({ ...prev, subspecies: e.target.value }))}
-                disabled={!form.species}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-              >
-                <option value="">{form.species ? 'Sélectionner' : 'Choisir une espèce d\'abord'}</option>
-                {getSubspeciesForSpecies(presets, form.species).map(sub => (
-                  <option key={sub} value={sub}>{sub}</option>
-                ))}
-              </select>
+              <div className="flex gap-1">
+                <select
+                  value={form.subspecies}
+                  onChange={(e) => setForm(prev => ({ ...prev, subspecies: e.target.value }))}
+                  disabled={!form.species}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">{form.species ? 'Sélectionner' : 'Choisir une espèce d\'abord'}</option>
+                  {getSubspeciesForSpecies(presets, form.species).map(sub => (
+                    <option key={sub} value={sub}>{sub}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setQuickAddField('subspecies')}
+                  disabled={!form.species}
+                  className="p-2 text-gray-500 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Ajouter une sous-espèce"
+                >
+                  <PlusCircle size={20} />
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Taille</label>
-              <select
-                value={form.size}
-                onChange={(e) => setForm(prev => ({ ...prev, size: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-              >
-                {presets.sizes.map(size => (
-                  <option key={size} value={size}>{size}</option>
-                ))}
-              </select>
+              <div className="flex gap-1">
+                <select
+                  value={form.size}
+                  onChange={(e) => setForm(prev => ({ ...prev, size: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                >
+                  {presets.sizes.map(size => (
+                    <option key={size} value={size}>{size}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setQuickAddField('size')}
+                  className="p-2 text-gray-500 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition"
+                  title="Ajouter une taille"
+                >
+                  <PlusCircle size={20} />
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Alignement, Statut & Quantité */}
-          <div className="grid grid-cols-3 gap-3">
+          {/* Alignement & Statut */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Alignement</label>
-              <select
-                value={form.alignment}
-                onChange={(e) => setForm(prev => ({ ...prev, alignment: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-              >
-                <option value="">Sélectionner</option>
-                {presets.alignments.map(alignment => (
-                  <option key={alignment} value={alignment}>{alignment}</option>
-                ))}
-              </select>
+              <div className="flex gap-1">
+                <select
+                  value={form.alignment}
+                  onChange={(e) => setForm(prev => ({ ...prev, alignment: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                >
+                  <option value="">Sélectionner</option>
+                  {presets.alignments.map(alignment => (
+                    <option key={alignment} value={alignment}>{alignment}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setQuickAddField('alignment')}
+                  className="p-2 text-gray-500 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition"
+                  title="Ajouter un alignement"
+                >
+                  <PlusCircle size={20} />
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
@@ -369,6 +556,10 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* Quantité & Prix */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Quantité</label>
               <input
@@ -379,11 +570,33 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Prix (€)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.price ?? ''}
+                onChange={(e) => setForm(prev => ({ ...prev, price: e.target.value ? parseFloat(e.target.value) : null }))}
+                placeholder="Ex: 29.99"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              />
+            </div>
           </div>
 
           {/* Habitats (multi-select checkboxes) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Habitats</label>
+            <div className="flex items-center gap-2 mb-2">
+              <label className="block text-sm font-medium text-gray-700">Habitats</label>
+              <button
+                type="button"
+                onClick={() => setQuickAddField('habitat')}
+                className="p-1 text-gray-500 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition"
+                title="Ajouter un habitat"
+              >
+                <PlusCircle size={16} />
+              </button>
+            </div>
             <div className="flex flex-wrap gap-2">
               {presets.habitats.map(habitat => (
                 <label
@@ -489,6 +702,15 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
           </button>
         </div>
       </div>
+
+      {/* Quick add modal */}
+      {quickAddField && (
+        <QuickAddModal
+          title={getQuickAddTitle()}
+          onAdd={handleQuickAdd}
+          onClose={() => setQuickAddField(null)}
+        />
+      )}
     </div>
   );
 }

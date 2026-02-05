@@ -27,6 +27,7 @@ export function BatchEditModal({ selectedCount, onSubmit, onClose }: BatchEditMo
     alignment: undefined,
     habitats: undefined,
     status: undefined,
+    price: undefined,
   });
 
   const toggleHabitat = (habitat: string) => {
@@ -267,6 +268,20 @@ export function BatchEditModal({ selectedCount, onSubmit, onClose }: BatchEditMo
                 <option key={status.value} value={status.value}>{status.label}</option>
               ))}
             </select>
+          </div>
+
+          {/* Prix */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Prix (€)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.price ?? ''}
+              onChange={(e) => setForm(prev => ({ ...prev, price: e.target.value ? parseFloat(e.target.value) : undefined }))}
+              placeholder="— Ne pas modifier —"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+            />
           </div>
         </form>
 

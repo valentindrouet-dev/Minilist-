@@ -1,9 +1,9 @@
 import { useFigurines } from '../context/FigurineContext';
 import { usePresets } from '../context/PresetContext';
-import { PieChart, BarChart3, Tag, Palette, Users, Globe } from 'lucide-react';
+import { PieChart, BarChart3, Tag, Palette, Users, Globe, Gamepad2, Folder, Trees, Coins, Shield, Swords } from 'lucide-react';
 
 export function StatsPage() {
-  const { figurines, allBrands, allCategories, allUniverses, allSpecies, allTags } = useFigurines();
+  const { figurines, allBrands, allCategories, allUniverses, allSpecies, allTags, allGames, allCollections, allHabitats } = useFigurines();
   const { presets } = usePresets();
 
   // Calculate total with quantities
@@ -58,10 +58,66 @@ export function StatsPage() {
       .reduce((sum, f) => sum + (f.quantity || 1), 0),
   })).sort((a, b) => b.count - a.count);
 
+  // Sum quantities for each game
+  const gameCounts = allGames.map(game => ({
+    name: game,
+    count: figurines
+      .filter(f => f.game === game)
+      .reduce((sum, f) => sum + (f.quantity || 1), 0),
+  })).sort((a, b) => b.count - a.count);
+
+  // Sum quantities for each collection
+  const collectionCounts = allCollections.map(collection => ({
+    name: collection,
+    count: figurines
+      .filter(f => f.collection === collection)
+      .reduce((sum, f) => sum + (f.quantity || 1), 0),
+  })).sort((a, b) => b.count - a.count);
+
+  // Sum quantities for each habitat
+  const habitatCounts = allHabitats.map(habitat => ({
+    name: habitat,
+    count: figurines
+      .filter(f => f.habitats?.includes(habitat))
+      .reduce((sum, f) => sum + (f.quantity || 1), 0),
+  })).sort((a, b) => b.count - a.count);
+
+  // Sum quantities for each alignment (from presets)
+  const alignmentCounts = presets.alignments.map(alignment => ({
+    name: alignment,
+    count: figurines
+      .filter(f => f.alignment === alignment)
+      .reduce((sum, f) => sum + (f.quantity || 1), 0),
+  })).filter(a => a.count > 0).sort((a, b) => b.count - a.count);
+
+  // Sum quantities for each group/army
+  const allGroups = [...new Set(figurines.map(f => f.group).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr'));
+  const groupCounts = allGroups.map(group => ({
+    name: group,
+    count: figurines
+      .filter(f => f.group === group)
+      .reduce((sum, f) => sum + (f.quantity || 1), 0),
+  })).sort((a, b) => b.count - a.count);
+
+  // Calculate total price value
+  const totalValue = figurines.reduce((sum, f) => {
+    if (f.price != null) {
+      return sum + f.price * (f.quantity || 1);
+    }
+    return sum;
+  }, 0);
+  const figurinesWithPrice = figurines.filter(f => f.price != null);
+  const priceCount = figurinesWithPrice.reduce((sum, f) => sum + (f.quantity || 1), 0);
+
   const maxBrandCount = Math.max(...brandCounts.map(b => b.count), 1);
   const maxCategoryCount = Math.max(...categoryCounts.map(c => c.count), 1);
   const maxUniverseCount = Math.max(...universeCounts.map(u => u.count), 1);
   const maxSpeciesCount = Math.max(...speciesCounts.map(s => s.count), 1);
+  const maxGameCount = Math.max(...gameCounts.map(g => g.count), 1);
+  const maxCollectionCount = Math.max(...collectionCounts.map(c => c.count), 1);
+  const maxHabitatCount = Math.max(...habitatCounts.map(h => h.count), 1);
+  const maxAlignmentCount = Math.max(...alignmentCounts.map(a => a.count), 1);
+  const maxGroupCount = Math.max(...groupCounts.map(g => g.count), 1);
 
   // Get painted count for progress (sum of quantities)
   const paintedCount = figurines
@@ -131,6 +187,24 @@ export function StatsPage() {
                   />
                 )
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Collection value */}
+        {totalValue > 0 && (
+          <div className="mt-6 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl border border-amber-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-amber-700">
+                <Coins size={20} />
+                <span className="font-medium">Valeur de la collection</span>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-amber-700">{totalValue.toFixed(2)} €</div>
+                <div className="text-xs text-amber-600">
+                  {priceCount} figurine{priceCount !== 1 ? 's' : ''} avec prix renseigné
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -232,6 +306,136 @@ export function StatsPage() {
                   <div
                     className="h-full bg-amber-500 rounded-full"
                     style={{ width: `${(species.count / maxSpeciesCount) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* By Game */}
+      {gameCounts.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Gamepad2 size={20} className="text-primary-500" />
+            Par jeu
+          </h2>
+          <div className="space-y-3">
+            {gameCounts.slice(0, 10).map(game => (
+              <div key={game.name}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="font-medium">{game.name}</span>
+                  <span className="text-gray-500">{game.count}</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-violet-500 rounded-full"
+                    style={{ width: `${(game.count / maxGameCount) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* By Collection */}
+      {collectionCounts.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Folder size={20} className="text-primary-500" />
+            Par collection
+          </h2>
+          <div className="space-y-3">
+            {collectionCounts.slice(0, 10).map(collection => (
+              <div key={collection.name}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="font-medium">{collection.name}</span>
+                  <span className="text-gray-500">{collection.count}</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-pink-500 rounded-full"
+                    style={{ width: `${(collection.count / maxCollectionCount) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* By Group/Army */}
+      {groupCounts.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Swords size={20} className="text-primary-500" />
+            Par groupe / armée
+          </h2>
+          <div className="space-y-3">
+            {groupCounts.slice(0, 10).map(group => (
+              <div key={group.name}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="font-medium">{group.name}</span>
+                  <span className="text-gray-500">{group.count}</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-red-500 rounded-full"
+                    style={{ width: `${(group.count / maxGroupCount) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* By Habitat */}
+      {habitatCounts.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Trees size={20} className="text-primary-500" />
+            Par habitat
+          </h2>
+          <div className="space-y-3">
+            {habitatCounts.slice(0, 10).map(habitat => (
+              <div key={habitat.name}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="font-medium">{habitat.name}</span>
+                  <span className="text-gray-500">{habitat.count}</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 rounded-full"
+                    style={{ width: `${(habitat.count / maxHabitatCount) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* By Alignment */}
+      {alignmentCounts.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Shield size={20} className="text-primary-500" />
+            Par alignement
+          </h2>
+          <div className="space-y-3">
+            {alignmentCounts.map(alignment => (
+              <div key={alignment.name}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="font-medium">{alignment.name}</span>
+                  <span className="text-gray-500">{alignment.count}</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-slate-500 rounded-full"
+                    style={{ width: `${(alignment.count / maxAlignmentCount) * 100}%` }}
                   />
                 </div>
               </div>

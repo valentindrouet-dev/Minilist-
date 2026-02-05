@@ -55,6 +55,8 @@ export function FigurineCard({
         return figurine.alignment || '—';
       case 'status':
         return status?.label || '—';
+      case 'price':
+        return figurine.price != null ? `${figurine.price.toFixed(2)} €` : '—';
       case 'created_at':
         return new Date(figurine.created_at).toLocaleDateString('fr-FR');
       case 'updated_at':

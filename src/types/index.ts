@@ -13,6 +13,7 @@ export interface Figurine {
   group: string;
   habitats: string[];
   status: string;
+  price: number | null;
   quantity: number;
   tags: string[];
   notes: string;
@@ -35,6 +36,7 @@ export interface BatchEditInput {
   alignment?: string;
   habitats?: string[];
   status?: string;
+  price?: number | null;
 }
 
 export type FigurineInput = Omit<Figurine, 'id' | 'created_at' | 'updated_at'>;
@@ -53,7 +55,7 @@ export interface FilterState {
   tags: string[];
 }
 
-export type SortField = 'name' | 'category' | 'brand' | 'game' | 'collection' | 'universe' | 'species' | 'size' | 'alignment' | 'group' | 'status' | 'created_at' | 'updated_at';
+export type SortField = 'name' | 'category' | 'brand' | 'game' | 'collection' | 'universe' | 'species' | 'size' | 'alignment' | 'group' | 'status' | 'price' | 'created_at' | 'updated_at';
 export type SortOrder = 'asc' | 'desc';
 
 export interface SortState {
@@ -192,6 +194,7 @@ export const SORT_OPTIONS: { value: SortField; label: string }[] = [
   { value: 'size', label: 'Taille' },
   { value: 'alignment', label: 'Alignement' },
   { value: 'status', label: 'Statut' },
+  { value: 'price', label: 'Prix' },
   { value: 'created_at', label: 'Date d\'ajout' },
   { value: 'updated_at', label: 'Dernière modification' },
 ];

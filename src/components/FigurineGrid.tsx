@@ -1,6 +1,7 @@
 import { GRID_SIZES, type Figurine, type GridSize, type SortField } from '../types';
 import { FigurineCard } from './FigurineCard';
 import { Package } from 'lucide-react';
+import { usePresets } from '../context/PresetContext';
 
 interface FigurineGridProps {
   figurines: Figurine[];
@@ -15,6 +16,9 @@ interface FigurineGridProps {
   onSelect?: (id: string) => void;
 }
 
+// Fields that should show separators when sorting
+const GROUPED_FIELDS: SortField[] = ['category', 'brand', 'game', 'collection', 'group', 'universe', 'species', 'size', 'alignment', 'status', 'price'];
+
 export function FigurineGrid({
   figurines,
   loading,
@@ -27,7 +31,52 @@ export function FigurineGrid({
   selectedIds = new Set(),
   onSelect,
 }: FigurineGridProps) {
+  const { presets } = usePresets();
   const gridCols = GRID_SIZES.find(s => s.value === gridSize)?.cols || GRID_SIZES[2].cols;
+  const showSeparators = GROUPED_FIELDS.includes(sortField);
+
+  // Get the group value for a figurine based on sort field
+  const getGroupValue = (fig: Figurine): string => {
+    switch (sortField) {
+      case 'category': return fig.category || 'Non défini';
+      case 'brand': return fig.brand || 'Non défini';
+      case 'game': return fig.game || 'Non défini';
+      case 'collection': return fig.collection || 'Non défini';
+      case 'group': return fig.group || 'Non défini';
+      case 'universe': return fig.universe || 'Non défini';
+      case 'species': return fig.species || 'Non défini';
+      case 'size': return fig.size || 'Non défini';
+      case 'alignment': return fig.alignment || 'Non défini';
+      case 'status': {
+        const status = presets.statuses.find(s => s.value === fig.status);
+        return status?.label || 'Non défini';
+      }
+      case 'price': {
+        if (fig.price == null) return 'Prix non défini';
+        if (fig.price === 0) return 'Gratuit';
+        if (fig.price < 10) return 'Moins de 10 €';
+        if (fig.price < 25) return '10 € - 25 €';
+        if (fig.price < 50) return '25 € - 50 €';
+        if (fig.price < 100) return '50 € - 100 €';
+        return 'Plus de 100 €';
+      }
+      default: return '';
+    }
+  };
+
+  // Group figurines by the sort field
+  const groupedFigurines = showSeparators
+    ? figurines.reduce<{ group: string; items: Figurine[] }[]>((acc, fig) => {
+        const groupValue = getGroupValue(fig);
+        const existingGroup = acc.find(g => g.group === groupValue);
+        if (existingGroup) {
+          existingGroup.items.push(fig);
+        } else {
+          acc.push({ group: groupValue, items: [fig] });
+        }
+        return acc;
+      }, [])
+    : [{ group: '', items: figurines }];
 
   if (loading) {
     return (
@@ -63,20 +112,37 @@ export function FigurineGrid({
   }
 
   return (
-    <div className={`grid ${gridCols} gap-4`}>
-      {figurines.map(figurine => (
-        <FigurineCard
-          key={figurine.id}
-          figurine={figurine}
-          gridSize={gridSize}
-          sortField={sortField}
-          onView={onView}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          selectionMode={selectionMode}
-          isSelected={selectedIds.has(figurine.id)}
-          onSelect={onSelect}
-        />
+    <div className="space-y-6">
+      {groupedFigurines.map(({ group, items }) => (
+        <div key={group || 'all'}>
+          {/* Section header */}
+          {showSeparators && group && (
+            <div className="flex items-center gap-3 mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">{group}</h3>
+              <span className="text-sm text-gray-500">
+                ({items.reduce((sum, f) => sum + (f.quantity || 1), 0)} figurine{items.reduce((sum, f) => sum + (f.quantity || 1), 0) !== 1 ? 's' : ''})
+              </span>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+          )}
+          {/* Grid of cards */}
+          <div className={`grid ${gridCols} gap-4`}>
+            {items.map(figurine => (
+              <FigurineCard
+                key={figurine.id}
+                figurine={figurine}
+                gridSize={gridSize}
+                sortField={sortField}
+                onView={onView}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                selectionMode={selectionMode}
+                isSelected={selectedIds.has(figurine.id)}
+                onSelect={onSelect}
+              />
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   );

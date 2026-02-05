@@ -105,6 +105,7 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
           alignment: f.alignment || '',
           group: f.group || '',
           habitats,
+          price: f.price ?? null,
           quantity: f.quantity || 1,
         };
       });
