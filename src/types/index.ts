@@ -9,7 +9,9 @@ export interface Figurine {
   species: string;
   subspecies: string;
   size: string;
-  habitat: string;
+  alignment: string;
+  group: string;
+  habitats: string[];
   status: string;
   quantity: number;
   tags: string[];
@@ -23,11 +25,15 @@ export interface Figurine {
 export interface BatchEditInput {
   category?: string;
   brand?: string;
+  game?: string;
+  collection?: string;
+  group?: string;
   universe?: string;
   species?: string;
   subspecies?: string;
   size?: string;
-  habitat?: string;
+  alignment?: string;
+  habitats?: string[];
   status?: string;
 }
 
@@ -41,12 +47,13 @@ export interface FilterState {
   species: string;
   subspecies: string;
   size: string;
-  habitat: string;
+  alignment: string;
+  habitats: string[];
   status: string;
   tags: string[];
 }
 
-export type SortField = 'name' | 'category' | 'brand' | 'game' | 'collection' | 'universe' | 'species' | 'size' | 'status' | 'created_at' | 'updated_at';
+export type SortField = 'name' | 'category' | 'brand' | 'game' | 'collection' | 'universe' | 'species' | 'size' | 'alignment' | 'group' | 'status' | 'created_at' | 'updated_at';
 export type SortOrder = 'asc' | 'desc';
 
 export interface SortState {
@@ -70,6 +77,7 @@ export interface Presets {
   species: string[];
   subspeciesBySpecies: SubspeciesBySpecies;
   sizes: string[];
+  alignments: string[];
   habitats: string[];
   statuses: StatusPreset[];
 }
@@ -140,6 +148,17 @@ export const DEFAULT_PRESETS: Presets = {
     'Très Grand',
     'Gigantesque',
   ],
+  alignments: [
+    'Loyal Bon',
+    'Neutre Bon',
+    'Chaotique Bon',
+    'Loyal Neutre',
+    'Neutre',
+    'Chaotique Neutre',
+    'Loyal Mauvais',
+    'Neutre Mauvais',
+    'Chaotique Mauvais',
+  ],
   habitats: sortAlpha([
     'Aquatique',
     'Désert',
@@ -167,9 +186,11 @@ export const SORT_OPTIONS: { value: SortField; label: string }[] = [
   { value: 'brand', label: 'Marque' },
   { value: 'game', label: 'Jeu' },
   { value: 'collection', label: 'Collection' },
+  { value: 'group', label: 'Groupe / Armée' },
   { value: 'universe', label: 'Univers' },
   { value: 'species', label: 'Espèce' },
   { value: 'size', label: 'Taille' },
+  { value: 'alignment', label: 'Alignement' },
   { value: 'status', label: 'Statut' },
   { value: 'created_at', label: 'Date d\'ajout' },
   { value: 'updated_at', label: 'Dernière modification' },

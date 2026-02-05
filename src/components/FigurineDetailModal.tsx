@@ -103,6 +103,12 @@ export function FigurineDetailModal({ figurine, onClose, onEdit }: FigurineDetai
                   <div className="font-medium">{figurine.collection}</div>
                 </div>
               )}
+              {figurine.group && (
+                <div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Groupe / Armée</div>
+                  <div className="font-medium">{figurine.group}</div>
+                </div>
+              )}
               {figurine.universe && (
                 <div>
                   <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Univers</div>
@@ -127,10 +133,10 @@ export function FigurineDetailModal({ figurine, onClose, onEdit }: FigurineDetai
                   <div className="font-medium">{figurine.size}</div>
                 </div>
               )}
-              {figurine.habitat && (
+              {figurine.alignment && (
                 <div>
-                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Habitat</div>
-                  <div className="font-medium">{figurine.habitat}</div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Alignement</div>
+                  <div className="font-medium">{figurine.alignment}</div>
                 </div>
               )}
               <div>
@@ -138,6 +144,23 @@ export function FigurineDetailModal({ figurine, onClose, onEdit }: FigurineDetai
                 <div className="font-medium">{quantity}</div>
               </div>
             </div>
+
+            {/* Habitats */}
+            {figurine.habitats && figurine.habitats.length > 0 && (
+              <div>
+                <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">Habitats</div>
+                <div className="flex flex-wrap gap-2">
+                  {figurine.habitats.map(habitat => (
+                    <span
+                      key={habitat}
+                      className="px-2.5 py-1 bg-green-50 text-green-700 rounded-full text-sm"
+                    >
+                      {habitat}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Tags */}
             {figurine.tags.length > 0 && (

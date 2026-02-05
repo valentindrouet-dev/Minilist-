@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Plus, RotateCcw, Tag, Palette, Globe, Package, CheckCircle, Ruler, Users, MapPin } from 'lucide-react';
+import { X, Plus, RotateCcw, Tag, Palette, Globe, Package, CheckCircle, Ruler, Users, MapPin, Compass } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
 import type { StatusPreset } from '../types';
 
@@ -284,6 +284,7 @@ export function PresetManager({ onClose }: PresetManagerProps) {
     addSpecies, removeSpecies,
     addSubspecies, removeSubspecies,
     addSize, removeSize,
+    addAlignment, removeAlignment,
     addHabitat, removeHabitat,
     addStatus, removeStatus, updateStatus,
     resetPresets,
@@ -369,6 +370,14 @@ export function PresetManager({ onClose }: PresetManagerProps) {
               onAdd={addSize}
               onRemove={removeSize}
               placeholder="Nouvelle taille..."
+            />
+            <PresetCard
+              title="Alignements"
+              icon={<Compass size={18} />}
+              items={presets.alignments}
+              onAdd={addAlignment}
+              onRemove={removeAlignment}
+              placeholder="Nouvel alignement..."
             />
             <PresetCard
               title="Habitats"

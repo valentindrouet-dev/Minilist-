@@ -18,6 +18,8 @@ interface PresetContextType {
   getSubspeciesForSpecies: (species: string) => string[];
   addSize: (size: string) => void;
   removeSize: (size: string) => void;
+  addAlignment: (alignment: string) => void;
+  removeAlignment: (alignment: string) => void;
   addHabitat: (habitat: string) => void;
   removeHabitat: (habitat: string) => void;
   addStatus: (status: StatusPreset) => void;
@@ -144,6 +146,16 @@ export function PresetProvider({ children }: { children: ReactNode }) {
     setPresets(prev => ({ ...prev, sizes: prev.sizes.filter(s => s !== size) }));
   };
 
+  const addAlignment = (alignment: string) => {
+    if (!presets.alignments.includes(alignment)) {
+      setPresets(prev => ({ ...prev, alignments: [...prev.alignments, alignment] }));
+    }
+  };
+
+  const removeAlignment = (alignment: string) => {
+    setPresets(prev => ({ ...prev, alignments: prev.alignments.filter(a => a !== alignment) }));
+  };
+
   const addHabitat = (habitat: string) => {
     if (!presets.habitats.includes(habitat)) {
       setPresets(prev => ({ ...prev, habitats: sortAlpha([...prev.habitats, habitat]) }));
@@ -196,6 +208,8 @@ export function PresetProvider({ children }: { children: ReactNode }) {
         getSubspeciesForSpecies,
         addSize,
         removeSize,
+        addAlignment,
+        removeAlignment,
         addHabitat,
         removeHabitat,
         addStatus,

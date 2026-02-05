@@ -37,7 +37,8 @@ export function FilterPanel({
     filters.species,
     filters.subspecies,
     filters.size,
-    filters.habitat,
+    filters.alignment,
+    filters.habitats.length > 0,
     filters.status,
     filters.tags.length > 0,
   ].filter(Boolean).length;
@@ -51,10 +52,18 @@ export function FilterPanel({
       species: '',
       subspecies: '',
       size: '',
-      habitat: '',
+      alignment: '',
+      habitats: [],
       status: '',
       tags: [],
     });
+  };
+
+  const toggleHabitat = (habitat: string) => {
+    const newHabitats = filters.habitats.includes(habitat)
+      ? filters.habitats.filter(h => h !== habitat)
+      : [...filters.habitats, habitat];
+    onChange({ ...filters, habitats: newHabitats });
   };
 
   const toggleTag = (tag: string) => {
@@ -232,20 +241,40 @@ export function FilterPanel({
             </div>
           </div>
 
-          {/* Habitat filter */}
+          {/* Alignement filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Alignement</label>
+            <select
+              value={filters.alignment}
+              onChange={(e) => onChange({ ...filters, alignment: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
+            >
+              <option value="">Tous</option>
+              {presets.alignments.map(alignment => (
+                <option key={alignment} value={alignment}>{alignment}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Habitats filter (multi-select) */}
           {habitats.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Habitat</label>
-              <select
-                value={filters.habitat}
-                onChange={(e) => onChange({ ...filters, habitat: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
-              >
-                <option value="">Tous</option>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Habitats</label>
+              <div className="flex flex-wrap gap-2">
                 {habitats.map(habitat => (
-                  <option key={habitat} value={habitat}>{habitat}</option>
+                  <button
+                    key={habitat}
+                    onClick={() => toggleHabitat(habitat)}
+                    className={`px-3 py-1 rounded-full text-sm transition ${
+                      filters.habitats.includes(habitat)
+                        ? 'bg-primary-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {habitat}
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
           )}
 

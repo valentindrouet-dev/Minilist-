@@ -40,7 +40,8 @@ const initialFilters: FilterState = {
   species: '',
   subspecies: '',
   size: '',
-  habitat: '',
+  alignment: '',
+  habitats: [],
   status: '',
   tags: [],
 };
@@ -81,20 +82,32 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
       const data = await figurineService.getAll();
-      // Ensure new fields have default values for old data
-      const normalizedData = data.map(f => ({
-        ...f,
-        category: f.category || '',
-        brand: f.brand || '',
-        game: f.game || '',
-        collection: f.collection || '',
-        universe: f.universe || '',
-        species: f.species || '',
-        subspecies: f.subspecies || '',
-        size: f.size || 'Normal',
-        habitat: f.habitat || '',
-        quantity: f.quantity || 1,
-      }));
+      // Ensure new fields have default values for old data + migration
+      const normalizedData = data.map(f => {
+        // Migrate old habitat (string) to habitats (array)
+        let habitats: string[] = [];
+        if (Array.isArray(f.habitats)) {
+          habitats = f.habitats;
+        } else if ((f as unknown as { habitat?: string }).habitat) {
+          habitats = [(f as unknown as { habitat: string }).habitat];
+        }
+
+        return {
+          ...f,
+          category: f.category || '',
+          brand: f.brand || '',
+          game: f.game || '',
+          collection: f.collection || '',
+          universe: f.universe || '',
+          species: f.species || '',
+          subspecies: f.subspecies || '',
+          size: f.size || 'Normal',
+          alignment: f.alignment || '',
+          group: f.group || '',
+          habitats,
+          quantity: f.quantity || 1,
+        };
+      });
       setFigurines(normalizedData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement');
@@ -116,9 +129,11 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
         (fig.brand || '').toLowerCase().includes(searchLower) ||
         (fig.game || '').toLowerCase().includes(searchLower) ||
         (fig.collection || '').toLowerCase().includes(searchLower) ||
+        (fig.group || '').toLowerCase().includes(searchLower) ||
         (fig.universe || '').toLowerCase().includes(searchLower) ||
         (fig.species || '').toLowerCase().includes(searchLower) ||
         (fig.subspecies || '').toLowerCase().includes(searchLower) ||
+        (fig.alignment || '').toLowerCase().includes(searchLower) ||
         (fig.notes || '').toLowerCase().includes(searchLower) ||
         fig.tags.some(t => t.toLowerCase().includes(searchLower));
 
@@ -128,14 +143,17 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
       const matchesSpecies = !filters.species || fig.species === filters.species;
       const matchesSubspecies = !filters.subspecies || fig.subspecies === filters.subspecies;
       const matchesSize = !filters.size || fig.size === filters.size;
-      const matchesHabitat = !filters.habitat || fig.habitat === filters.habitat;
+      const matchesAlignment = !filters.alignment || fig.alignment === filters.alignment;
+      // Habitats filter: figurine must have at least one of the selected habitats
+      const matchesHabitats = filters.habitats.length === 0 ||
+        filters.habitats.some(h => fig.habitats.includes(h));
       const matchesStatus = !filters.status || fig.status === filters.status;
       const matchesTags = filters.tags.length === 0 ||
         filters.tags.every(tag => fig.tags.includes(tag));
 
       return matchesSearch && matchesCategory && matchesBrand && matchesUniverse &&
-             matchesSpecies && matchesSubspecies && matchesSize && matchesHabitat &&
-             matchesStatus && matchesTags;
+             matchesSpecies && matchesSubspecies && matchesSize && matchesAlignment &&
+             matchesHabitats && matchesStatus && matchesTags;
     });
 
     // Sort
@@ -192,7 +210,7 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
   }, [figurines]);
 
   const allHabitats = React.useMemo(() => {
-    const items = new Set(figurines.map(f => f.habitat).filter(Boolean));
+    const items = new Set(figurines.flatMap(f => f.habitats || []).filter(Boolean));
     return Array.from(items).sort((a, b) => a.localeCompare(b, 'fr'));
   }, [figurines]);
 

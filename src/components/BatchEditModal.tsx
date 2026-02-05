@@ -17,13 +17,25 @@ export function BatchEditModal({ selectedCount, onSubmit, onClose }: BatchEditMo
   const [form, setForm] = useState<BatchEditInput>({
     category: undefined,
     brand: undefined,
+    game: undefined,
+    collection: undefined,
+    group: undefined,
     universe: undefined,
     species: undefined,
     subspecies: undefined,
     size: undefined,
-    habitat: undefined,
+    alignment: undefined,
+    habitats: undefined,
     status: undefined,
   });
+
+  const toggleHabitat = (habitat: string) => {
+    const current = form.habitats || [];
+    const newHabitats = current.includes(habitat)
+      ? current.filter(h => h !== habitat)
+      : [...current, habitat];
+    setForm(prev => ({ ...prev, habitats: newHabitats.length > 0 ? newHabitats : undefined }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,6 +111,42 @@ export function BatchEditModal({ selectedCount, onSubmit, onClose }: BatchEditMo
             </select>
           </div>
 
+          {/* Jeu (champ libre) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Jeu</label>
+            <input
+              type="text"
+              value={form.game || ''}
+              onChange={(e) => setForm(prev => ({ ...prev, game: e.target.value || undefined }))}
+              placeholder="— Ne pas modifier —"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+            />
+          </div>
+
+          {/* Collection (champ libre) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Collection</label>
+            <input
+              type="text"
+              value={form.collection || ''}
+              onChange={(e) => setForm(prev => ({ ...prev, collection: e.target.value || undefined }))}
+              placeholder="— Ne pas modifier —"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+            />
+          </div>
+
+          {/* Groupe / Armée (champ libre) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Groupe / Armée</label>
+            <input
+              type="text"
+              value={form.group || ''}
+              onChange={(e) => setForm(prev => ({ ...prev, group: e.target.value || undefined }))}
+              placeholder="— Ne pas modifier —"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+            />
+          </div>
+
           {/* Universe */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Univers</label>
@@ -169,19 +217,41 @@ export function BatchEditModal({ selectedCount, onSubmit, onClose }: BatchEditMo
             </select>
           </div>
 
-          {/* Habitat */}
+          {/* Alignement */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Habitat</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Alignement</label>
             <select
-              value={form.habitat || ''}
-              onChange={(e) => setForm(prev => ({ ...prev, habitat: e.target.value || undefined }))}
+              value={form.alignment || ''}
+              onChange={(e) => setForm(prev => ({ ...prev, alignment: e.target.value || undefined }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
             >
               <option value="">— Ne pas modifier —</option>
-              {presets.habitats.map(habitat => (
-                <option key={habitat} value={habitat}>{habitat}</option>
+              {presets.alignments.map(alignment => (
+                <option key={alignment} value={alignment}>{alignment}</option>
               ))}
             </select>
+          </div>
+
+          {/* Habitats (multi-select) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Habitats</label>
+            <p className="text-xs text-gray-500 mb-2">Cliquez pour ajouter aux habitats sélectionnés</p>
+            <div className="flex flex-wrap gap-2">
+              {presets.habitats.map(habitat => (
+                <button
+                  key={habitat}
+                  type="button"
+                  onClick={() => toggleHabitat(habitat)}
+                  className={`px-3 py-1 rounded-full text-sm transition ${
+                    form.habitats?.includes(habitat)
+                      ? 'bg-primary-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {habitat}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Status */}

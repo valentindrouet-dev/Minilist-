@@ -1,4 +1,4 @@
-import { GRID_SIZES, type Figurine, type GridSize } from '../types';
+import { GRID_SIZES, type Figurine, type GridSize, type SortField } from '../types';
 import { FigurineCard } from './FigurineCard';
 import { Package } from 'lucide-react';
 
@@ -6,6 +6,7 @@ interface FigurineGridProps {
   figurines: Figurine[];
   loading: boolean;
   gridSize: GridSize;
+  sortField?: SortField;
   onView: (figurine: Figurine) => void;
   onEdit: (figurine: Figurine) => void;
   onDelete: (id: string) => void;
@@ -18,6 +19,7 @@ export function FigurineGrid({
   figurines,
   loading,
   gridSize,
+  sortField = 'name',
   onView,
   onEdit,
   onDelete,
@@ -67,6 +69,7 @@ export function FigurineGrid({
           key={figurine.id}
           figurine={figurine}
           gridSize={gridSize}
+          sortField={sortField}
           onView={onView}
           onEdit={onEdit}
           onDelete={onDelete}

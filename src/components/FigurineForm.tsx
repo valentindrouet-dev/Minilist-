@@ -25,7 +25,9 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
     species: '',
     subspecies: '',
     size: 'Normal',
-    habitat: '',
+    alignment: '',
+    group: '',
+    habitats: [],
     status: presets.statuses[0]?.value || 'unpainted',
     quantity: 1,
     tags: [],
@@ -43,13 +45,24 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
     species: figurine.species || '',
     subspecies: figurine.subspecies || '',
     size: figurine.size || 'Normal',
-    habitat: figurine.habitat || '',
+    alignment: figurine.alignment || '',
+    group: figurine.group || '',
+    habitats: figurine.habitats || [],
     status: figurine.status,
     quantity: figurine.quantity || 1,
     tags: figurine.tags,
     notes: figurine.notes,
     image_url: figurine.image_url,
   } : emptyForm);
+
+  const toggleHabitat = (habitat: string) => {
+    setForm(prev => ({
+      ...prev,
+      habitats: prev.habitats.includes(habitat)
+        ? prev.habitats.filter(h => h !== habitat)
+        : [...prev.habitats, habitat],
+    }));
+  };
 
   const [newTag, setNewTag] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -248,6 +261,18 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
             </div>
           </div>
 
+          {/* Groupe / Armée (champ libre) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Groupe / Armée</label>
+            <input
+              type="text"
+              value={form.group}
+              onChange={(e) => setForm(prev => ({ ...prev, group: e.target.value }))}
+              placeholder="Ex: Ultramarines, Légion des Damnés..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+            />
+          </div>
+
           {/* Univers & Espèce */}
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -317,18 +342,18 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
             </div>
           </div>
 
-          {/* Habitat, Statut & Quantité */}
+          {/* Alignement, Statut & Quantité */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Habitat</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Alignement</label>
               <select
-                value={form.habitat}
-                onChange={(e) => setForm(prev => ({ ...prev, habitat: e.target.value }))}
+                value={form.alignment}
+                onChange={(e) => setForm(prev => ({ ...prev, alignment: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
               >
                 <option value="">Sélectionner</option>
-                {presets.habitats.map(habitat => (
-                  <option key={habitat} value={habitat}>{habitat}</option>
+                {presets.alignments.map(alignment => (
+                  <option key={alignment} value={alignment}>{alignment}</option>
                 ))}
               </select>
             </div>
@@ -353,6 +378,31 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
                 onChange={(e) => setForm(prev => ({ ...prev, quantity: Math.max(1, parseInt(e.target.value) || 1) }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
               />
+            </div>
+          </div>
+
+          {/* Habitats (multi-select checkboxes) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Habitats</label>
+            <div className="flex flex-wrap gap-2">
+              {presets.habitats.map(habitat => (
+                <label
+                  key={habitat}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer transition text-sm ${
+                    form.habitats.includes(habitat)
+                      ? 'bg-primary-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.habitats.includes(habitat)}
+                    onChange={() => toggleHabitat(habitat)}
+                    className="sr-only"
+                  />
+                  {habitat}
+                </label>
+              ))}
             </div>
           </div>
 

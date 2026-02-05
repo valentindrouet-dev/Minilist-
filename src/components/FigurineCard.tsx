@@ -1,10 +1,11 @@
 import { Edit2, Trash2, Image as ImageIcon, Check } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
-import type { Figurine, GridSize } from '../types';
+import type { Figurine, GridSize, SortField } from '../types';
 
 interface FigurineCardProps {
   figurine: Figurine;
   gridSize: GridSize;
+  sortField?: SortField;
   onView: (figurine: Figurine) => void;
   onEdit: (figurine: Figurine) => void;
   onDelete: (id: string) => void;
@@ -16,6 +17,7 @@ interface FigurineCardProps {
 export function FigurineCard({
   figurine,
   gridSize,
+  sortField = 'name',
   onView,
   onEdit,
   onDelete,
@@ -29,6 +31,38 @@ export function FigurineCard({
 
   const isCompact = gridSize === 'xs' || gridSize === 'sm';
   const isMedium = gridSize === 'md';
+
+  // Get secondary text based on sort field
+  const getSecondaryText = (): string => {
+    switch (sortField) {
+      case 'category':
+        return figurine.category || '—';
+      case 'brand':
+        return figurine.brand || '—';
+      case 'game':
+        return figurine.game || '—';
+      case 'collection':
+        return figurine.collection || '—';
+      case 'group':
+        return figurine.group || '—';
+      case 'universe':
+        return figurine.universe || '—';
+      case 'species':
+        return figurine.species || '—';
+      case 'size':
+        return figurine.size || '—';
+      case 'alignment':
+        return figurine.alignment || '—';
+      case 'status':
+        return status?.label || '—';
+      case 'created_at':
+        return new Date(figurine.created_at).toLocaleDateString('fr-FR');
+      case 'updated_at':
+        return new Date(figurine.updated_at).toLocaleDateString('fr-FR');
+      default:
+        return figurine.brand || '—';
+    }
+  };
 
   const handleDelete = () => {
     if (window.confirm(`Supprimer "${figurine.name}" ?`)) {
@@ -124,7 +158,7 @@ export function FigurineCard({
             {figurine.name}
           </h3>
           <p className={`text-gray-500 truncate ${isMedium ? 'text-xs' : 'text-sm'}`}>
-            {figurine.brand}
+            {getSecondaryText()}
           </p>
           {!isMedium && (
             <>

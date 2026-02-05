@@ -277,6 +277,7 @@ function CollectionPage() {
             figurines={filteredFigurines}
             loading={loading}
             gridSize={gridSize}
+            sortField={sort.field}
             onView={handleView}
             onEdit={handleEdit}
             onDelete={deleteFigurine}
