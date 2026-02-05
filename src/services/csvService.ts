@@ -1,5 +1,8 @@
 import type { Figurine, FigurineInput } from '../types';
 
+// Utilise le point-virgule comme séparateur pour Excel français
+const DELIMITER = ';';
+
 const CSV_HEADERS = [
   'name',
   'brand',
@@ -13,20 +16,20 @@ const CSV_HEADERS = [
   'image_url',
 ] as const;
 
-const CSV_TEMPLATE_CONTENT = `name,brand,category,subcategory,universe,status,scale,tags,notes,image_url
-Space Marine Intercessor,Games Workshop,Infanterie,Humain,Warhammer 40K,painted,28mm,"space marine;ultramarines;sci-fi",Peint en bleu Ultramarine,
-Goblin Archer,Reaper Miniatures,Infanterie,Gobelin,D&D / Pathfinder,unpainted,28mm,"gobelin;archer;fantasy",,
-Dragon Rouge,Impression 3D,Monstre / Créature,Dragon,D&D / Pathfinder,wip,75mm,"dragon;boss;epic",En cours de peinture - base rouge faite,
+const CSV_TEMPLATE_CONTENT = `name;brand;category;subcategory;universe;status;scale;tags;notes;image_url
+Space Marine Intercessor;Games Workshop;Infanterie;Humain;Warhammer 40K;painted;28mm;space marine,ultramarines,sci-fi;Peint en bleu Ultramarine;
+Goblin Archer;Reaper Miniatures;Infanterie;Gobelin;D&D / Pathfinder;unpainted;28mm;gobelin,archer,fantasy;;
+Dragon Rouge;Impression 3D;Monstre / Créature;Dragon;D&D / Pathfinder;wip;75mm;dragon,boss,epic;En cours de peinture - base rouge faite;
 `;
 
 function escapeCSVField(field: string): string {
-  if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+  if (field.includes(DELIMITER) || field.includes('"') || field.includes('\n')) {
     return `"${field.replace(/"/g, '""')}"`;
   }
   return field;
 }
 
-function parseCSVLine(line: string): string[] {
+function parseCSVLine(line: string, delimiter: string = DELIMITER): string[] {
   const result: string[] = [];
   let current = '';
   let inQuotes = false;
@@ -47,7 +50,7 @@ function parseCSVLine(line: string): string[] {
     } else {
       if (char === '"') {
         inQuotes = true;
-      } else if (char === ',') {
+      } else if (char === delimiter) {
         result.push(current.trim());
         current = '';
       } else {
@@ -60,12 +63,19 @@ function parseCSVLine(line: string): string[] {
   return result;
 }
 
+// Détecte automatiquement le délimiteur utilisé (virgule ou point-virgule)
+function detectDelimiter(firstLine: string): string {
+  const semicolonCount = (firstLine.match(/;/g) || []).length;
+  const commaCount = (firstLine.match(/,/g) || []).length;
+  return semicolonCount >= commaCount ? ';' : ',';
+}
+
 export function generateCSVTemplate(): string {
   return CSV_TEMPLATE_CONTENT;
 }
 
 export function exportToCSV(figurines: Figurine[]): string {
-  const lines: string[] = [CSV_HEADERS.join(',')];
+  const lines: string[] = [CSV_HEADERS.join(DELIMITER)];
 
   for (const fig of figurines) {
     const row = [
@@ -76,11 +86,11 @@ export function exportToCSV(figurines: Figurine[]): string {
       escapeCSVField(fig.universe || ''),
       escapeCSVField(fig.status || ''),
       escapeCSVField(fig.scale || ''),
-      escapeCSVField((fig.tags || []).join(';')),
+      escapeCSVField((fig.tags || []).join(',')), // Virgules pour les tags car ; est le séparateur
       escapeCSVField(fig.notes || ''),
       escapeCSVField(fig.image_url || ''),
     ];
-    lines.push(row.join(','));
+    lines.push(row.join(DELIMITER));
   }
 
   return lines.join('\n');
@@ -93,7 +103,10 @@ export function parseCSV(csvContent: string): FigurineInput[] {
     throw new Error('Le fichier CSV doit contenir au moins un en-tête et une ligne de données');
   }
 
-  const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
+  // Détecte automatiquement le délimiteur
+  const delimiter = detectDelimiter(lines[0]);
+
+  const headers = parseCSVLine(lines[0], delimiter).map(h => h.toLowerCase().trim());
 
   // Validate required header
   if (!headers.includes('name')) {
@@ -103,7 +116,7 @@ export function parseCSV(csvContent: string): FigurineInput[] {
   const figurines: FigurineInput[] = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const values = parseCSVLine(lines[i]);
+    const values = parseCSVLine(lines[i], delimiter);
 
     if (values.every(v => !v.trim())) {
       continue; // Skip empty lines
@@ -119,10 +132,10 @@ export function parseCSV(csvContent: string): FigurineInput[] {
       continue; // Skip rows without name
     }
 
-    // Parse tags (support both ; and , as separators)
+    // Parse tags (support both ; and , as separators within the tags field)
     const tagsString = row['tags'] || '';
     const tags = tagsString
-      .split(/[;,]/)
+      .split(/[,]/) // Utilise la virgule pour séparer les tags
       .map(t => t.trim())
       .filter(t => t.length > 0);
 
