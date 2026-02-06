@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Package, ChevronDown, ChevronUp, Image as ImageIcon } from 'lucide-react';
+import { Package, X, Image as ImageIcon, Edit2 } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
 import type { Figurine } from '../types';
 
@@ -8,6 +8,8 @@ interface GameGroup {
   figurines: Figurine[];
   coverImage: string | null;
   totalQuantity: number;
+  brand: string;
+  universe: string;
 }
 
 interface GameViewProps {
@@ -18,6 +20,7 @@ interface GameViewProps {
   selectionMode: boolean;
   selectedIds: Set<string>;
   onSelect: (id: string) => void;
+  onEditGame?: (game: GameGroup) => void;
 }
 
 export function GameView({
@@ -27,9 +30,10 @@ export function GameView({
   selectionMode,
   selectedIds,
   onSelect,
+  onEditGame,
 }: GameViewProps) {
   const { presets } = usePresets();
-  const [expandedGames, setExpandedGames] = useState<Set<string>>(new Set());
+  const [expandedGame, setExpandedGame] = useState<string | null>(null);
 
   // Group figurines by game
   const gameGroups = useMemo(() => {
@@ -44,6 +48,8 @@ export function GameView({
           figurines: [],
           coverImage: null,
           totalQuantity: 0,
+          brand: fig.brand || '',
+          universe: fig.universe || '',
         });
       }
 
@@ -51,9 +57,16 @@ export function GameView({
       group.figurines.push(fig);
       group.totalQuantity += fig.quantity || 1;
 
-      // Use the first image found as cover (ideally all figurines from the same box share the box image)
+      // Use the first image found as cover
       if (!group.coverImage && fig.image_url) {
         group.coverImage = fig.image_url;
+      }
+      // Update brand/universe if not set
+      if (!group.brand && fig.brand) {
+        group.brand = fig.brand;
+      }
+      if (!group.universe && fig.universe) {
+        group.universe = fig.universe;
       }
     });
 
@@ -63,17 +76,9 @@ export function GameView({
     );
   }, [figurines]);
 
-  const toggleGame = (game: string) => {
-    setExpandedGames(prev => {
-      const next = new Set(prev);
-      if (next.has(game)) {
-        next.delete(game);
-      } else {
-        next.add(game);
-      }
-      return next;
-    });
-  };
+  const expandedGameData = expandedGame
+    ? gameGroups.find(g => g.game === expandedGame)
+    : null;
 
   const selectAllInGame = (group: GameGroup) => {
     group.figurines.forEach(fig => {
@@ -101,138 +106,194 @@ export function GameView({
   }
 
   return (
-    <div className="space-y-4">
-      {gameGroups.map(group => {
-        const isExpanded = expandedGames.has(group.game);
-        const selectedInGroup = group.figurines.filter(f => selectedIds.has(f.id)).length;
+    <>
+      {/* Grid of game boxes */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        {gameGroups.map(group => {
+          const selectedInGroup = group.figurines.filter(f => selectedIds.has(f.id)).length;
 
-        return (
-          <div key={group.game} className="bg-white rounded-xl shadow-sm overflow-hidden">
-            {/* Game header - clickable */}
-            <button
-              onClick={() => toggleGame(group.game)}
-              className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition text-left"
+          return (
+            <div
+              key={group.game}
+              onClick={() => setExpandedGame(group.game)}
+              className="group cursor-pointer"
             >
-              {/* Cover image */}
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden">
+              {/* Square card */}
+              <div className="aspect-square rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition relative">
+                {/* Cover image */}
                 {group.coverImage ? (
                   <img
                     src={group.coverImage}
                     alt={group.game}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                    <Package className="text-gray-300" size={48} />
+                  </div>
+                )}
+
+                {/* Overlay gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+                {/* Quantity badge */}
+                <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full font-medium">
+                  {group.totalQuantity}
+                </div>
+
+                {/* Selection indicator */}
+                {selectionMode && selectedInGroup > 0 && (
+                  <div className="absolute top-2 left-2 bg-primary-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                    {selectedInGroup} sel.
+                  </div>
+                )}
+
+                {/* Game info */}
+                <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+                  <h3 className="font-semibold text-sm truncate">{group.game}</h3>
+                  {group.brand && (
+                    <p className="text-xs text-white/70 truncate">{group.brand}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Expanded game modal */}
+      {expandedGame && expandedGameData && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={() => setExpandedGame(null)}
+        >
+          <div
+            className="bg-white w-full max-w-4xl max-h-[90vh] rounded-xl overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center gap-4 p-4 border-b border-gray-200 bg-gray-50">
+              {/* Cover thumbnail */}
+              <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
+                {expandedGameData.coverImage ? (
+                  <img
+                    src={expandedGameData.coverImage}
+                    alt={expandedGameData.game}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Package className="text-gray-300" size={32} />
+                    <Package className="text-gray-400" size={24} />
                   </div>
                 )}
               </div>
 
               {/* Game info */}
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-lg text-gray-900 truncate">
-                  {group.game}
-                </h3>
+                <h2 className="text-lg font-semibold truncate">{expandedGameData.game}</h2>
                 <p className="text-sm text-gray-500">
-                  {group.totalQuantity} figurine{group.totalQuantity !== 1 ? 's' : ''}
-                  {group.figurines.length !== group.totalQuantity && ` (${group.figurines.length} entrées)`}
+                  {expandedGameData.totalQuantity} figurine{expandedGameData.totalQuantity !== 1 ? 's' : ''}
+                  {expandedGameData.brand && ` • ${expandedGameData.brand}`}
+                  {expandedGameData.universe && ` • ${expandedGameData.universe}`}
                 </p>
-                {selectionMode && selectedInGroup > 0 && (
-                  <p className="text-xs text-primary-600 mt-1">
-                    {selectedInGroup} sélectionnée{selectedInGroup !== 1 ? 's' : ''}
-                  </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2">
+                {onEditGame && (
+                  <button
+                    onClick={() => onEditGame(expandedGameData)}
+                    className="p-2 text-gray-500 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition"
+                    title="Modifier les infos du jeu"
+                  >
+                    <Edit2 size={20} />
+                  </button>
                 )}
-              </div>
-
-              {/* Selection button for the group */}
-              {selectionMode && (
+                {selectionMode && (
+                  <button
+                    onClick={() => selectAllInGame(expandedGameData)}
+                    className="px-3 py-1.5 text-sm bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition"
+                  >
+                    Tout sélectionner
+                  </button>
+                )}
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    selectAllInGame(group);
-                  }}
-                  className="px-3 py-1.5 text-xs bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition"
+                  onClick={() => setExpandedGame(null)}
+                  className="p-2 hover:bg-gray-200 rounded-lg transition"
                 >
-                  Tout sélectionner
+                  <X size={20} />
                 </button>
-              )}
-
-              {/* Expand/collapse icon */}
-              <div className="text-gray-400">
-                {isExpanded ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
               </div>
-            </button>
+            </div>
 
-            {/* Expanded content - figurine grid */}
-            {isExpanded && (
-              <div className="border-t border-gray-100 p-4 bg-gray-50">
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                  {group.figurines.map(figurine => {
-                    const status = presets.statuses.find(s => s.value === figurine.status);
-                    const isSelected = selectedIds.has(figurine.id);
+            {/* Figurines grid */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                {expandedGameData.figurines.map(figurine => {
+                  const status = presets.statuses.find(s => s.value === figurine.status);
+                  const isSelected = selectedIds.has(figurine.id);
 
-                    return (
-                      <div
-                        key={figurine.id}
-                        onClick={() => selectionMode ? onSelect(figurine.id) : onView(figurine)}
-                        className={`group cursor-pointer relative ${
-                          isSelected ? 'ring-2 ring-primary-500 ring-offset-2 rounded-lg' : ''
-                        }`}
-                      >
-                        {/* Image */}
-                        <div className="aspect-square rounded-lg overflow-hidden bg-gray-200 mb-1.5">
-                          {figurine.image_url ? (
-                            <img
-                              src={figurine.image_url}
-                              alt={figurine.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <ImageIcon className="text-gray-400" size={24} />
-                            </div>
-                          )}
+                  return (
+                    <div
+                      key={figurine.id}
+                      onClick={() => selectionMode ? onSelect(figurine.id) : onView(figurine)}
+                      className={`group cursor-pointer relative ${
+                        isSelected ? 'ring-2 ring-primary-500 ring-offset-2 rounded-lg' : ''
+                      }`}
+                    >
+                      {/* Image */}
+                      <div className="aspect-square rounded-lg overflow-hidden bg-gray-200 mb-1.5">
+                        {figurine.image_url ? (
+                          <img
+                            src={figurine.image_url}
+                            alt={figurine.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="text-gray-400" size={24} />
+                          </div>
+                        )}
 
-                          {/* Status indicator */}
-                          <div className={`absolute top-1 right-1 w-3 h-3 rounded-full ${status?.color || 'bg-gray-400'} border-2 border-white shadow`} />
+                        {/* Status indicator */}
+                        <div className={`absolute top-1 right-1 w-3 h-3 rounded-full ${status?.color || 'bg-gray-400'} border-2 border-white shadow`} />
 
-                          {/* Quantity badge */}
-                          {figurine.quantity > 1 && (
-                            <div className="absolute top-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
-                              x{figurine.quantity}
-                            </div>
-                          )}
+                        {/* Quantity badge */}
+                        {figurine.quantity > 1 && (
+                          <div className="absolute top-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
+                            x{figurine.quantity}
+                          </div>
+                        )}
 
-                          {/* Selection checkbox */}
-                          {selectionMode && (
-                            <div className={`absolute bottom-1 left-1 w-5 h-5 rounded border-2 flex items-center justify-center transition ${
-                              isSelected
-                                ? 'bg-primary-500 border-primary-500 text-white'
-                                : 'bg-white/90 border-gray-300'
-                            }`}>
-                              {isSelected && (
-                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Name */}
-                        <p className="text-xs text-gray-700 text-center truncate px-1">
-                          {figurine.name}
-                        </p>
+                        {/* Selection checkbox */}
+                        {selectionMode && (
+                          <div className={`absolute bottom-1 left-1 w-5 h-5 rounded border-2 flex items-center justify-center transition ${
+                            isSelected
+                              ? 'bg-primary-500 border-primary-500 text-white'
+                              : 'bg-white/90 border-gray-300'
+                          }`}>
+                            {isSelected && (
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
+
+                      {/* Name */}
+                      <p className="text-xs text-gray-700 text-center truncate px-1">
+                        {figurine.name}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
-            )}
+            </div>
           </div>
-        );
-      })}
-    </div>
+        </div>
+      )}
+    </>
   );
 }

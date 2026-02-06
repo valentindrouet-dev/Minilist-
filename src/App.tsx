@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { FigurineProvider, useFigurines } from './context/FigurineContext';
 import { PresetProvider } from './context/PresetContext';
-import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineTable, FigurineForm, FigurineDetailModal, StatsPage, ViewControls, PresetManager, ImportExportModal, BatchEditModal, MultiAddModal, GameBoxModal, GameView } from './components';
+import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineTable, FigurineForm, FigurineDetailModal, StatsPage, ViewControls, PresetManager, ImportExportModal, BatchEditModal, MultiAddModal, GameBoxModal, GameView, GameEditModal } from './components';
 import type { Figurine, FigurineInput, BatchEditInput, ViewMode } from './types';
 import { isSupabaseConfigured } from './services/supabase';
 import { CheckSquare, Edit3 } from 'lucide-react';
@@ -42,6 +42,7 @@ function CollectionPage() {
   const [showBatchEdit, setShowBatchEdit] = useState(false);
   const [editingFigurine, setEditingFigurine] = useState<Figurine | null>(null);
   const [viewingFigurine, setViewingFigurine] = useState<Figurine | null>(null);
+  const [editingGame, setEditingGame] = useState<{ game: string; brand: string; universe: string; coverImage: string | null; figurineIds: string[] } | null>(null);
 
   // View mode (grid vs table)
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -105,6 +106,25 @@ function CollectionPage() {
   const handleGameBoxAdd = async (items: FigurineInput[]) => {
     for (const item of items) {
       await addFigurine(item);
+    }
+  };
+
+  const handleEditGame = (gameGroup: { game: string; brand: string; universe: string; coverImage: string | null; figurines: Figurine[] }) => {
+    setEditingGame({
+      game: gameGroup.game,
+      brand: gameGroup.brand,
+      universe: gameGroup.universe,
+      coverImage: gameGroup.coverImage,
+      figurineIds: gameGroup.figurines.map(f => f.id),
+    });
+  };
+
+  const handleSaveGameInfo = async (updates: { brand?: string; universe?: string; image_url?: string | null }) => {
+    if (!editingGame) return;
+
+    // Update all figurines in the game with the new info
+    for (const id of editingGame.figurineIds) {
+      await updateFigurine(id, updates);
     }
   };
 
@@ -293,6 +313,7 @@ function CollectionPage() {
             selectionMode={selectionMode}
             selectedIds={selectedIds}
             onSelect={handleSelect}
+            onEditGame={handleEditGame}
           />
         )}
       </main>
@@ -354,6 +375,16 @@ function CollectionPage() {
         <GameBoxModal
           onSubmit={handleGameBoxAdd}
           onClose={() => setShowGameBox(false)}
+          onUploadImage={uploadImage}
+        />
+      )}
+
+      {/* Game edit modal */}
+      {editingGame && (
+        <GameEditModal
+          gameInfo={editingGame}
+          onSave={handleSaveGameInfo}
+          onClose={() => setEditingGame(null)}
           onUploadImage={uploadImage}
         />
       )}

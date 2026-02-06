@@ -14,3 +14,4 @@ export { BatchEditModal } from './BatchEditModal';
 export { MultiAddModal } from './MultiAddModal';
 export { GameBoxModal } from './GameBoxModal';
 export { GameView } from './GameView';
+export { GameEditModal } from './GameEditModal';
