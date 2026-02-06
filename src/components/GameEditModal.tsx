@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { X, Camera, Link, Package } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
+import { setGameCoverImage } from '../services/gameMetadata';
 
 interface GameInfo {
   game: string;
@@ -14,7 +15,7 @@ interface GameInfo {
 
 interface GameEditModalProps {
   gameInfo: GameInfo;
-  onSave: (updates: { brand?: string; universe?: string; collection?: string; price?: number | null; image_url?: string | null }) => Promise<void>;
+  onSave: (updates: { brand?: string; universe?: string; collection?: string; price?: number | null }) => Promise<void>;
   onClose: () => void;
   onUploadImage: (file: File) => Promise<string>;
 }
@@ -99,7 +100,7 @@ export function GameEditModal({ gameInfo, onSave, onClose, onUploadImage }: Game
   const handleSave = async () => {
     try {
       setSaving(true);
-      const updates: { brand?: string; universe?: string; collection?: string; price?: number | null; image_url?: string | null } = {};
+      const updates: { brand?: string; universe?: string; collection?: string; price?: number | null } = {};
 
       if (brand !== gameInfo.brand) {
         updates.brand = brand;
@@ -113,8 +114,10 @@ export function GameEditModal({ gameInfo, onSave, onClose, onUploadImage }: Game
       if (price !== gameInfo.price) {
         updates.price = price;
       }
+
+      // Save cover image separately in game metadata (not on figurines)
       if (coverImage !== gameInfo.coverImage) {
-        updates.image_url = coverImage;
+        setGameCoverImage(gameInfo.game, coverImage);
       }
 
       if (Object.keys(updates).length > 0) {

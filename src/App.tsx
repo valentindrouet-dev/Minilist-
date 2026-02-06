@@ -43,6 +43,7 @@ function CollectionPage() {
   const [editingFigurine, setEditingFigurine] = useState<Figurine | null>(null);
   const [viewingFigurine, setViewingFigurine] = useState<Figurine | null>(null);
   const [editingGame, setEditingGame] = useState<{ game: string; brand: string; universe: string; collection: string; price: number | null; coverImage: string | null; figurineIds: string[] } | null>(null);
+  const [gameMetadataVersion, setGameMetadataVersion] = useState(0);
 
   // View mode (grid vs table)
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -121,10 +122,10 @@ function CollectionPage() {
     });
   };
 
-  const handleSaveGameInfo = async (updates: { brand?: string; universe?: string; collection?: string; price?: number | null; image_url?: string | null }) => {
+  const handleSaveGameInfo = async (updates: { brand?: string; universe?: string; collection?: string; price?: number | null }) => {
     if (!editingGame) return;
 
-    // Update all figurines in the game with the new info
+    // Update all figurines in the game with the new info (not images, those are stored separately)
     for (const id of editingGame.figurineIds) {
       await updateFigurine(id, updates);
     }
@@ -267,7 +268,7 @@ function CollectionPage() {
       </div>
 
       {/* Spacer to push content below fixed header - height depends on selection mode */}
-      <div className={selectionMode ? 'h-[360px] sm:h-[320px]' : 'h-[300px] sm:h-[260px]'} />
+      <div className={selectionMode ? 'h-[400px] sm:h-[360px]' : 'h-[340px] sm:h-[300px]'} />
 
       <main className="max-w-7xl mx-auto px-4 pb-6">
         {/* Error */}
@@ -316,6 +317,7 @@ function CollectionPage() {
             selectedIds={selectedIds}
             onSelect={handleSelect}
             onEditGame={handleEditGame}
+            metadataVersion={gameMetadataVersion}
           />
         )}
       </main>
@@ -386,7 +388,10 @@ function CollectionPage() {
         <GameEditModal
           gameInfo={editingGame}
           onSave={handleSaveGameInfo}
-          onClose={() => setEditingGame(null)}
+          onClose={() => {
+            setEditingGame(null);
+            setGameMetadataVersion(v => v + 1);
+          }}
           onUploadImage={uploadImage}
         />
       )}

@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Package, X, Image as ImageIcon, Edit2 } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
+import { getGameMetadata } from '../services/gameMetadata';
 import type { Figurine } from '../types';
 
 interface GameGroup {
@@ -23,6 +24,7 @@ interface GameViewProps {
   selectedIds: Set<string>;
   onSelect: (id: string) => void;
   onEditGame?: (game: GameGroup) => void;
+  metadataVersion?: number;
 }
 
 export function GameView({
@@ -33,6 +35,7 @@ export function GameView({
   selectedIds,
   onSelect,
   onEditGame,
+  metadataVersion,
 }: GameViewProps) {
   const { presets } = usePresets();
   const [expandedGame, setExpandedGame] = useState<string | null>(null);
@@ -45,10 +48,12 @@ export function GameView({
       const gameName = fig.game || 'Sans jeu';
 
       if (!groups.has(gameName)) {
+        // Check for game metadata cover image first
+        const gameMetadata = getGameMetadata(gameName);
         groups.set(gameName, {
           game: gameName,
           figurines: [],
-          coverImage: null,
+          coverImage: gameMetadata?.coverImage || null,
           totalQuantity: 0,
           brand: fig.brand || '',
           universe: fig.universe || '',
@@ -66,7 +71,7 @@ export function GameView({
         group.totalPrice = (group.totalPrice || 0) + fig.price;
       }
 
-      // Use the first image found as cover
+      // Use the first figurine image as fallback if no game cover set
       if (!group.coverImage && fig.image_url) {
         group.coverImage = fig.image_url;
       }
@@ -86,7 +91,7 @@ export function GameView({
     return Array.from(groups.values()).sort((a, b) =>
       a.game.localeCompare(b.game, 'fr')
     );
-  }, [figurines]);
+  }, [figurines, metadataVersion]);
 
   const expandedGameData = expandedGame
     ? gameGroups.find(g => g.game === expandedGame)
