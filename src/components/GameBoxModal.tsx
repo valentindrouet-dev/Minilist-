@@ -25,8 +25,12 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
   const [boxImage, setBoxImage] = useState<string | null>(null);
   const [imageUrlInput, setImageUrlInput] = useState('');
 
-  // Figurine items
+  // Figurine items - start with 5 empty rows
   const [items, setItems] = useState<GameBoxItem[]>([
+    { id: crypto.randomUUID(), name: '', quantity: 1 },
+    { id: crypto.randomUUID(), name: '', quantity: 1 },
+    { id: crypto.randomUUID(), name: '', quantity: 1 },
+    { id: crypto.randomUUID(), name: '', quantity: 1 },
     { id: crypto.randomUUID(), name: '', quantity: 1 },
   ]);
 
@@ -79,8 +83,13 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
     }
   };
 
-  const addItem = () => {
-    setItems(prev => [...prev, { id: crypto.randomUUID(), name: '', quantity: 1 }]);
+  const addRows = () => {
+    const newRows = Array.from({ length: 5 }, () => ({
+      id: crypto.randomUUID(),
+      name: '',
+      quantity: 1,
+    }));
+    setItems(prev => [...prev, ...newRows]);
   };
 
   const removeItem = (id: string) => {
@@ -261,7 +270,7 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Univers</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Système</label>
               <select
                 value={universe}
                 onChange={(e) => setUniverse(e.target.value)}
@@ -275,7 +284,7 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
             </div>
           </div>
 
-          {/* Figurines list */}
+          {/* Figurines table */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-700">
@@ -286,44 +295,57 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
               </span>
             </div>
 
-            <div className="space-y-2">
-              {items.map((item, index) => (
-                <div key={item.id} className="flex gap-2 items-center">
-                  <input
-                    type="text"
-                    value={item.name}
-                    onChange={(e) => updateItem(item.id, { name: e.target.value })}
-                    placeholder={`Figurine ${index + 1}`}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-                    autoFocus={index === items.length - 1 && items.length > 1}
-                  />
-                  <input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => updateItem(item.id, { quantity: Math.max(1, parseInt(e.target.value) || 1) })}
-                    className="w-16 px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-center"
-                    title="Quantité"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeItem(item.id)}
-                    disabled={items.length === 1}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+            {/* Table */}
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              {/* Header */}
+              <div className="flex bg-gray-50 border-b border-gray-200">
+                <div className="flex-1 px-3 py-2 text-sm font-medium text-gray-700">
+                  Figurines
                 </div>
-              ))}
+                <div className="w-20 px-2 py-2 text-sm font-medium text-gray-700 text-center">
+                  Qté
+                </div>
+                <div className="w-10" />
+              </div>
+
+              {/* Rows */}
+              <div className="divide-y divide-gray-100">
+                {items.map((item, index) => (
+                  <div key={item.id} className="flex items-center">
+                    <input
+                      type="text"
+                      value={item.name}
+                      onChange={(e) => updateItem(item.id, { name: e.target.value })}
+                      placeholder={`Figurine ${index + 1}`}
+                      className="flex-1 px-3 py-2 border-0 focus:ring-0 outline-none bg-transparent"
+                    />
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) => updateItem(item.id, { quantity: Math.max(1, parseInt(e.target.value) || 1) })}
+                      className="w-20 px-2 py-2 border-0 border-l border-gray-100 focus:ring-0 outline-none text-center bg-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeItem(item.id)}
+                      disabled={items.length === 1}
+                      className="w-10 p-2 text-gray-400 hover:text-red-500 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <button
               type="button"
-              onClick={addItem}
+              onClick={addRows}
               className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-primary-400 hover:text-primary-600 hover:bg-primary-50 transition"
             >
               <Plus size={18} />
-              Ajouter une figurine
+              Ajouter 5 lignes
             </button>
           </div>
         </form>

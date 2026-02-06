@@ -262,7 +262,7 @@ export function GameView({
 
           {/* Figurines grid */}
           <div className="p-4">
-            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4">
               {expandedGameData.figurines.map(figurine => {
                 const status = presets.statuses.find(s => s.value === figurine.status);
                 const isSelected = selectedIds.has(figurine.id);
