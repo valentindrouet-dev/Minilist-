@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { FigurineProvider, useFigurines } from './context/FigurineContext';
 import { PresetProvider } from './context/PresetContext';
-import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineTable, FigurineForm, FigurineDetailModal, StatsPage, ViewControls, PresetManager, ImportExportModal, BatchEditModal, MultiAddModal, GameBoxModal, GameView, GameEditModal } from './components';
+import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineTable, FigurineForm, FigurineDetailModal, StatsPage, ViewControls, PresetManager, ImportExportModal, BatchEditModal, MultiAddModal, GameBoxModal, GameView, GameEditModal, ImageMigrationModal } from './components';
 import type { Figurine, FigurineInput, BatchEditInput, ViewMode } from './types';
 import { isSupabaseConfigured } from './services/supabase';
 import { CheckSquare, Edit3 } from 'lucide-react';
@@ -53,6 +53,7 @@ function CollectionPage() {
   const [showGameBox, setShowGameBox] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
   const [showImportExport, setShowImportExport] = useState(false);
+  const [showImageMigration, setShowImageMigration] = useState(false);
   const [showBatchEdit, setShowBatchEdit] = useState(false);
   const [editingFigurine, setEditingFigurine] = useState<Figurine | null>(null);
   const [viewingFigurine, setViewingFigurine] = useState<Figurine | null>(null);
@@ -403,6 +404,11 @@ function CollectionPage() {
       {/* Import/Export modal */}
       {showImportExport && (
         <ImportExportModal onClose={() => setShowImportExport(false)} />
+      )}
+
+      {/* Image migration modal */}
+      {showImageMigration && (
+        <ImageMigrationModal onClose={() => setShowImageMigration(false)} />
       )}
 
       {/* Batch edit modal */}

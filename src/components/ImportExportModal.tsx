@@ -1,22 +1,95 @@
-import { useState, useRef } from 'react';
-import { X, Download, Upload, FileSpreadsheet, CheckCircle, AlertCircle, FileDown } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { X, Download, Upload, FileSpreadsheet, CheckCircle, AlertCircle, FileDown, Cloud, Loader2, Image } from 'lucide-react';
 import { useFigurines } from '../context/FigurineContext';
 import { generateCSVTemplate, exportToCSV, parseCSV, downloadFile, importFigurinesFromCSV } from '../services/csvService';
+import { uploadToImgur, isBase64Image } from '../services/imgurService';
 
 interface ImportExportModalProps {
   onClose: () => void;
 }
 
-type Tab = 'import' | 'export';
+type Tab = 'import' | 'export' | 'images';
+
+interface ImageStats {
+  base64Count: number;
+  urlCount: number;
+  noImageCount: number;
+  estimatedSizeMB: number;
+}
 
 export function ImportExportModal({ onClose }: ImportExportModalProps) {
-  const { figurines, addFigurine, refreshFigurines } = useFigurines();
+  const { figurines, addFigurine, updateFigurine, refreshFigurines } = useFigurines();
   const [activeTab, setActiveTab] = useState<Tab>('import');
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ success: number; errors: string[] } | null>(null);
   const [previewData, setPreviewData] = useState<{ name: string; brand: string; category: string }[] | null>(null);
   const [csvContent, setCsvContent] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Image migration state
+  const [imageStats, setImageStats] = useState<ImageStats | null>(null);
+  const [migrating, setMigrating] = useState(false);
+  const [migrationProgress, setMigrationProgress] = useState({ current: 0, total: 0, success: 0, failed: 0 });
+  const [migrationErrors, setMigrationErrors] = useState<string[]>([]);
+  const [migrationComplete, setMigrationComplete] = useState(false);
+  const [currentMigrating, setCurrentMigrating] = useState('');
+
+  // Calculate image stats
+  useEffect(() => {
+    const base64Figurines = figurines.filter(f => isBase64Image(f.image_url));
+    const urlFigurines = figurines.filter(f => f.image_url && !isBase64Image(f.image_url));
+    const noImageFigurines = figurines.filter(f => !f.image_url);
+
+    const totalBase64Size = base64Figurines.reduce((acc, f) => {
+      if (f.image_url) {
+        return acc + (f.image_url.length * 0.75);
+      }
+      return acc;
+    }, 0);
+
+    setImageStats({
+      base64Count: base64Figurines.length,
+      urlCount: urlFigurines.length,
+      noImageCount: noImageFigurines.length,
+      estimatedSizeMB: totalBase64Size / (1024 * 1024),
+    });
+  }, [figurines]);
+
+  const startMigration = async () => {
+    const base64Figurines = figurines.filter(f => isBase64Image(f.image_url));
+    if (base64Figurines.length === 0) return;
+
+    setMigrating(true);
+    setMigrationProgress({ current: 0, total: base64Figurines.length, success: 0, failed: 0 });
+    setMigrationErrors([]);
+    setMigrationComplete(false);
+
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (let i = 0; i < base64Figurines.length; i++) {
+      const figurine = base64Figurines[i];
+      setCurrentMigrating(figurine.name);
+      setMigrationProgress(prev => ({ ...prev, current: i + 1 }));
+
+      try {
+        const imgurUrl = await uploadToImgur(figurine.image_url!);
+        await updateFigurine(figurine.id, { image_url: imgurUrl });
+        successCount++;
+        setMigrationProgress(prev => ({ ...prev, success: successCount }));
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        failedCount++;
+        const errorMsg = `${figurine.name}: ${error instanceof Error ? error.message : 'Erreur'}`;
+        setMigrationErrors(prev => [...prev, errorMsg]);
+        setMigrationProgress(prev => ({ ...prev, failed: failedCount }));
+      }
+    }
+
+    setMigrating(false);
+    setMigrationComplete(true);
+    setCurrentMigrating('');
+  };
 
   const handleDownloadTemplate = () => {
     const template = generateCSVTemplate();
@@ -128,6 +201,22 @@ export function ImportExportModal({ onClose }: ImportExportModalProps) {
           >
             <Download size={18} />
             Exporter
+          </button>
+          <button
+            onClick={() => setActiveTab('images')}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 font-medium transition border-b-2 relative ${
+              activeTab === 'images'
+                ? 'border-primary-500 text-primary-600 bg-primary-50'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <Cloud size={18} />
+            Images
+            {imageStats && imageStats.base64Count > 0 && (
+              <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                {imageStats.base64Count > 99 ? '99+' : imageStats.base64Count}
+              </span>
+            )}
           </button>
         </div>
 
@@ -291,6 +380,160 @@ export function ImportExportModal({ onClose }: ImportExportModalProps) {
                   <li>Vous pouvez modifier le fichier et le ré-importer</li>
                 </ul>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'images' && (
+            <div className="space-y-4">
+              {/* Explanation */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                <p className="font-medium mb-1">Pourquoi migrer les images ?</p>
+                <p>Les images stockées localement (base64) occupent beaucoup d'espace (~5-10 Mo max). En les migrant vers Imgur (gratuit), vous libérez de l'espace et évitez les erreurs.</p>
+              </div>
+
+              {/* Stats */}
+              {imageStats && !migrating && !migrationComplete && (
+                <div className="space-y-3">
+                  <h3 className="font-medium text-gray-900">État actuel du stockage</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-orange-700">
+                        <Image size={18} />
+                        <span className="font-bold text-lg">{imageStats.base64Count}</span>
+                      </div>
+                      <p className="text-xs text-orange-600 mt-1">Images locales (base64)</p>
+                      <p className="text-xs text-orange-500 font-medium">~{imageStats.estimatedSizeMB.toFixed(1)} Mo utilisés</p>
+                    </div>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-green-700">
+                        <Cloud size={18} />
+                        <span className="font-bold text-lg">{imageStats.urlCount}</span>
+                      </div>
+                      <p className="text-xs text-green-600 mt-1">Images externes (URL)</p>
+                      <p className="text-xs text-green-500">Aucun espace utilisé</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    {imageStats.noImageCount} figurines sans image
+                  </p>
+
+                  {imageStats.base64Count === 0 ? (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                      <CheckCircle className="mx-auto text-green-500 mb-2" size={32} />
+                      <p className="text-green-700 font-medium">Aucune image à migrer !</p>
+                      <p className="text-sm text-green-600">Toutes vos images sont déjà hébergées en externe.</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+                        <p className="font-medium">Avant de commencer :</p>
+                        <ul className="list-disc list-inside mt-1 space-y-1">
+                          <li>Les images seront uploadées sur Imgur (service gratuit)</li>
+                          <li>La migration peut prendre plusieurs minutes</li>
+                          <li>Ne fermez pas cette fenêtre pendant le processus</li>
+                        </ul>
+                      </div>
+                      <button
+                        onClick={startMigration}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition font-medium"
+                      >
+                        <Cloud size={20} />
+                        Migrer {imageStats.base64Count} images vers Imgur
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Progress */}
+              {migrating && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="animate-spin text-primary-500" size={24} />
+                    <div>
+                      <p className="font-medium">Migration en cours...</p>
+                      <p className="text-sm text-gray-500">Ne fermez pas cette fenêtre</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Progression</span>
+                      <span>{migrationProgress.current} / {migrationProgress.total}</span>
+                    </div>
+                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary-500 transition-all duration-300"
+                        style={{ width: `${(migrationProgress.current / migrationProgress.total) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {currentMigrating && (
+                    <p className="text-sm text-gray-500 truncate">
+                      Upload: <span className="font-medium">{currentMigrating}</span>
+                    </p>
+                  )}
+
+                  <div className="flex gap-4 text-sm">
+                    <span className="text-green-600">
+                      <CheckCircle size={16} className="inline mr-1" />
+                      {migrationProgress.success} réussies
+                    </span>
+                    {migrationProgress.failed > 0 && (
+                      <span className="text-red-600">
+                        <AlertCircle size={16} className="inline mr-1" />
+                        {migrationProgress.failed} échouées
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Completed */}
+              {migrationComplete && (
+                <div className="space-y-4">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                    <CheckCircle className="mx-auto text-green-500 mb-2" size={40} />
+                    <p className="text-green-700 font-medium text-lg">Migration terminée !</p>
+                    <p className="text-sm text-green-600 mt-1">
+                      {migrationProgress.success} images migrées avec succès
+                    </p>
+                    {imageStats && (
+                      <p className="text-sm text-green-500 mt-2">
+                        ~{imageStats.estimatedSizeMB.toFixed(1)} Mo libérés
+                      </p>
+                    )}
+                  </div>
+
+                  {migrationErrors.length > 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <p className="font-medium text-red-700 mb-2">
+                        <AlertCircle size={16} className="inline mr-1" />
+                        {migrationErrors.length} erreurs
+                      </p>
+                      <div className="max-h-24 overflow-y-auto text-xs text-red-600 space-y-1">
+                        {migrationErrors.slice(0, 5).map((error, i) => (
+                          <p key={i}>{error}</p>
+                        ))}
+                        {migrationErrors.length > 5 && (
+                          <p>... et {migrationErrors.length - 5} autres erreurs</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      setMigrationComplete(false);
+                      setMigrationErrors([]);
+                    }}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition"
+                  >
+                    Retour
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
