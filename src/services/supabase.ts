@@ -121,7 +121,14 @@ export const figurineService = {
     if (index === -1) throw new Error('Figurine not found');
 
     figurines[index] = { ...figurines[index], ...input, updated_at: now };
-    saveLocalFigurines(figurines);
+    try {
+      saveLocalFigurines(figurines);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        throw new Error('Espace de stockage local insuffisant. Essayez avec une image plus petite ou supprimez des figurines.');
+      }
+      throw error;
+    }
     return figurines[index];
   },
 
