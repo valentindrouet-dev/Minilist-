@@ -64,7 +64,7 @@ export interface FilterState {
   onlyOwnImages: boolean;
 }
 
-export type SortField = 'name' | 'category' | 'brand' | 'game' | 'collection' | 'universe' | 'species' | 'size' | 'alignment' | 'group' | 'habitats' | 'status' | 'price' | 'created_at' | 'updated_at';
+export type SortField = 'name' | 'category' | 'brand' | 'game' | 'collection' | 'universe' | 'species' | 'subspecies' | 'size' | 'alignment' | 'group' | 'habitats' | 'status' | 'price' | 'created_at' | 'updated_at';
 export type SortOrder = 'asc' | 'desc';
 
 export interface SortState {
@@ -200,6 +200,7 @@ export const SORT_OPTIONS: { value: SortField; label: string }[] = [
   { value: 'group', label: 'Groupe / Armée' },
   { value: 'universe', label: 'Univers' },
   { value: 'species', label: 'Espèce' },
+  { value: 'subspecies', label: 'Sous-Espèce' },
   { value: 'size', label: 'Taille' },
   { value: 'alignment', label: 'Alignement' },
   { value: 'habitats', label: 'Habitat' },

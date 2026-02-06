@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { X, Plus, Trash2, Camera } from 'lucide-react';
+import { X, Plus, Trash2, Camera, Link } from 'lucide-react';
 import type { FigurineInput } from '../types';
 
 interface MultiAddItem {
@@ -7,6 +7,8 @@ interface MultiAddItem {
   name: string;
   image_url: string | null;
   imageFile?: File;
+  imageUrlInput: string;
+  dragOver: boolean;
 }
 
 interface MultiAddModalProps {
@@ -54,13 +56,13 @@ async function compressImage(file: File, maxWidth = 800, quality = 0.7): Promise
 
 export function MultiAddModal({ onSubmit, onClose, onUploadImage }: MultiAddModalProps) {
   const [items, setItems] = useState<MultiAddItem[]>([
-    { id: crypto.randomUUID(), name: '', image_url: null },
+    { id: crypto.randomUUID(), name: '', image_url: null, imageUrlInput: '', dragOver: false },
   ]);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
   const addItem = () => {
-    setItems(prev => [...prev, { id: crypto.randomUUID(), name: '', image_url: null }]);
+    setItems(prev => [...prev, { id: crypto.randomUUID(), name: '', image_url: null, imageUrlInput: '', dragOver: false }]);
   };
 
   const removeItem = (id: string) => {
@@ -80,6 +82,37 @@ export function MultiAddModal({ onSubmit, onClose, onUploadImage }: MultiAddModa
     const compressedFile = await compressImage(file);
     const previewUrl = URL.createObjectURL(compressedFile);
     updateItem(id, { image_url: previewUrl, imageFile: compressedFile });
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    updateItem(id, { dragOver: true });
+  };
+
+  const handleDragLeave = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    updateItem(id, { dragOver: false });
+  };
+
+  const handleDrop = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    updateItem(id, { dragOver: false });
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      handleImageSelect(id, file);
+    }
+  };
+
+  const handleUrlChange = (id: string, value: string) => {
+    const url = value.trim();
+    if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+      updateItem(id, { imageUrlInput: value, image_url: url, imageFile: undefined });
+    } else {
+      updateItem(id, { imageUrlInput: value });
+    }
   };
 
   const handleFileInput = (id: string) => {
@@ -176,62 +209,89 @@ export function MultiAddModal({ onSubmit, onClose, onUploadImage }: MultiAddModa
           </p>
 
           {items.map((item, index) => (
-            <div key={item.id} className="flex gap-3 items-start p-3 bg-gray-50 rounded-xl">
-              {/* Image preview / upload */}
-              <div className="flex-shrink-0">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  ref={(el) => {
-                    if (el) fileInputRefs.current.set(item.id, el);
-                  }}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleImageSelect(item.id, file);
-                  }}
-                />
+            <div key={item.id} className="p-3 bg-gray-50 rounded-xl space-y-2">
+              <div className="flex gap-3 items-start">
+                {/* Image preview / upload with drag & drop */}
+                <div className="flex-shrink-0">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    ref={(el) => {
+                      if (el) fileInputRefs.current.set(item.id, el);
+                    }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageSelect(item.id, file);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleFileInput(item.id)}
+                    onDragOver={(e) => handleDragOver(e, item.id)}
+                    onDragLeave={(e) => handleDragLeave(e, item.id)}
+                    onDrop={(e) => handleDrop(e, item.id)}
+                    className={`w-16 h-16 rounded-lg border-2 border-dashed flex items-center justify-center overflow-hidden transition ${
+                      item.dragOver
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-300 hover:border-primary-400 hover:bg-primary-50'
+                    }`}
+                  >
+                    {item.image_url ? (
+                      <img
+                        src={item.image_url}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Camera size={24} className={item.dragOver ? 'text-primary-400' : 'text-gray-400'} />
+                    )}
+                  </button>
+                </div>
+
+                {/* Name input */}
+                <div className="flex-1">
+                  <label className="block text-xs text-gray-500 mb-1">
+                    Figurine #{index + 1}
+                  </label>
+                  <input
+                    type="text"
+                    value={item.name}
+                    onChange={(e) => updateItem(item.id, { name: e.target.value })}
+                    placeholder="Nom de la figurine"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                    autoFocus={index === items.length - 1}
+                  />
+                </div>
+
+                {/* Remove button */}
                 <button
                   type="button"
-                  onClick={() => handleFileInput(item.id)}
-                  className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden hover:border-primary-400 hover:bg-primary-50 transition"
+                  onClick={() => removeItem(item.id)}
+                  disabled={items.length === 1}
+                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  {item.image_url ? (
-                    <img
-                      src={item.image_url}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Camera size={24} className="text-gray-400" />
-                  )}
+                  <Trash2 size={18} />
                 </button>
               </div>
 
-              {/* Name input */}
-              <div className="flex-1">
-                <label className="block text-xs text-gray-500 mb-1">
-                  Figurine #{index + 1}
-                </label>
+              {/* URL input */}
+              <div className="flex items-center gap-2 pl-[76px]">
+                <Link size={14} className="text-gray-400 flex-shrink-0" />
                 <input
-                  type="text"
-                  value={item.name}
-                  onChange={(e) => updateItem(item.id, { name: e.target.value })}
-                  placeholder="Nom de la figurine"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-                  autoFocus={index === items.length - 1}
+                  type="url"
+                  value={item.imageUrlInput}
+                  onChange={(e) => handleUrlChange(item.id, e.target.value)}
+                  onPaste={(e) => {
+                    const pastedText = e.clipboardData.getData('text');
+                    if (pastedText) {
+                      setTimeout(() => handleUrlChange(item.id, pastedText), 0);
+                    }
+                  }}
+                  placeholder="Ou coller une URL d'image..."
+                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500 outline-none"
                 />
               </div>
-
-              {/* Remove button */}
-              <button
-                type="button"
-                onClick={() => removeItem(item.id)}
-                disabled={items.length === 1}
-                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <Trash2 size={18} />
-              </button>
             </div>
           ))}
 

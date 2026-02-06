@@ -66,6 +66,23 @@ function CollectionPage() {
     setViewingFigurine(figurine);
   };
 
+  // Navigation in detail modal
+  const viewingIndex = viewingFigurine ? filteredFigurines.findIndex(f => f.id === viewingFigurine.id) : -1;
+  const hasPreviousFigurine = viewingIndex > 0;
+  const hasNextFigurine = viewingIndex >= 0 && viewingIndex < filteredFigurines.length - 1;
+
+  const handlePreviousFigurine = () => {
+    if (hasPreviousFigurine) {
+      setViewingFigurine(filteredFigurines[viewingIndex - 1]);
+    }
+  };
+
+  const handleNextFigurine = () => {
+    if (hasNextFigurine) {
+      setViewingFigurine(filteredFigurines[viewingIndex + 1]);
+    }
+  };
+
   const handleEdit = (figurine: Figurine) => {
     setEditingFigurine(figurine);
     setShowForm(true);
@@ -155,7 +172,7 @@ function CollectionPage() {
     <>
       <Header onAddClick={handleAddClick} onMultiAddClick={() => setShowMultiAdd(true)} onSettingsClick={() => setShowPresets(true)} onImportExportClick={() => setShowImportExport(true)} />
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="max-w-7xl mx-auto px-4 py-6 pt-20">
         {/* Config warning */}
         {!isSupabaseConfigured() && (
           <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-start gap-3">
@@ -314,6 +331,10 @@ function CollectionPage() {
           figurine={viewingFigurine}
           onClose={() => setViewingFigurine(null)}
           onEdit={handleEdit}
+          onPrevious={handlePreviousFigurine}
+          onNext={handleNextFigurine}
+          hasPrevious={hasPreviousFigurine}
+          hasNext={hasNextFigurine}
         />
       )}
 
@@ -370,7 +391,7 @@ function StatsPageWrapper() {
   return (
     <>
       <Header onAddClick={handleAddClick} onSettingsClick={() => setShowPresets(true)} onImportExportClick={() => setShowImportExport(true)} />
-      <main className="max-w-4xl mx-auto px-4 py-6">
+      <main className="max-w-4xl mx-auto px-4 py-6 pt-20">
         <StatsPage />
       </main>
       {showPresets && (

@@ -1,4 +1,5 @@
-import { X, Image as ImageIcon, Edit2 } from 'lucide-react';
+import { useEffect, useCallback } from 'react';
+import { X, Image as ImageIcon, Edit2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
 import type { Figurine } from '../types';
 
@@ -6,9 +7,13 @@ interface FigurineDetailModalProps {
   figurine: Figurine;
   onClose: () => void;
   onEdit: (figurine: Figurine) => void;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  hasPrevious?: boolean;
+  hasNext?: boolean;
 }
 
-export function FigurineDetailModal({ figurine, onClose, onEdit }: FigurineDetailModalProps) {
+export function FigurineDetailModal({ figurine, onClose, onEdit, onPrevious, onNext, hasPrevious = false, hasNext = false }: FigurineDetailModalProps) {
   const { presets } = usePresets();
   const status = presets.statuses.find(s => s.value === figurine.status);
   const quantity = figurine.quantity || 1;
@@ -18,8 +23,46 @@ export function FigurineDetailModal({ figurine, onClose, onEdit }: FigurineDetai
     onEdit(figurine);
   };
 
+  // Keyboard navigation
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'ArrowLeft' && hasPrevious && onPrevious) {
+      onPrevious();
+    } else if (e.key === 'ArrowRight' && hasNext && onNext) {
+      onNext();
+    } else if (e.key === 'Escape') {
+      onClose();
+    }
+  }, [hasPrevious, hasNext, onPrevious, onNext, onClose]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      {/* Previous button */}
+      {hasPrevious && onPrevious && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onPrevious(); }}
+          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 p-2 sm:p-3 bg-white/90 hover:bg-white rounded-full shadow-lg transition z-10"
+          title="Précédente"
+        >
+          <ChevronLeft size={24} className="text-gray-700" />
+        </button>
+      )}
+
+      {/* Next button */}
+      {hasNext && onNext && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onNext(); }}
+          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 p-2 sm:p-3 bg-white/90 hover:bg-white rounded-full shadow-lg transition z-10"
+          title="Suivante"
+        >
+          <ChevronRight size={24} className="text-gray-700" />
+        </button>
+      )}
+
       <div
         className="bg-white w-full max-w-lg max-h-[90vh] rounded-xl overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}

@@ -14,7 +14,7 @@ export function Header({ onAddClick, onMultiAddClick, onSettingsClick, onImportE
   const location = useLocation();
 
   return (
-    <header className="bg-primary-600 text-white shadow-lg sticky top-0 z-50">
+    <header className="bg-primary-600 text-white shadow-lg fixed top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2">

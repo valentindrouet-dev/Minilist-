@@ -190,8 +190,14 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const [imageUrlInput, setImageUrlInput] = useState('');
-  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState(() => {
+    // Initialize with existing URL if it's not a base64 image
+    const url = figurine?.image_url;
+    if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+      return url;
+    }
+    return '';
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -281,12 +287,12 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
     }
   };
 
-  const handleUrlSubmit = () => {
-    const url = imageUrlInput.trim();
-    if (url) {
+  const handleUrlChange = (value: string) => {
+    setImageUrlInput(value);
+    // Auto-apply URL if it looks like a valid image URL
+    const url = value.trim();
+    if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
       setForm(prev => ({ ...prev, image_url: url }));
-      setImageUrlInput('');
-      setShowUrlInput(false);
     }
   };
 
@@ -373,54 +379,32 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
                   onChange={handleFileChange}
                   className="hidden"
                 />
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 text-sm"
-                  >
-                    <Upload size={16} />
-                    {uploading ? 'Upload...' : 'Fichier'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowUrlInput(!showUrlInput)}
-                    className={`flex items-center justify-center gap-2 px-3 py-2 border rounded-lg transition text-sm ${
-                      showUrlInput
-                        ? 'border-primary-500 bg-primary-50 text-primary-700'
-                        : 'border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Link size={16} />
-                    URL
-                  </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 text-sm"
+                >
+                  <Upload size={16} />
+                  {uploading ? 'Upload...' : 'Choisir un fichier'}
+                </button>
+                <div className="flex items-center gap-2">
+                  <Link size={16} className="text-gray-400 flex-shrink-0" />
+                  <input
+                    type="url"
+                    value={imageUrlInput}
+                    onChange={(e) => handleUrlChange(e.target.value)}
+                    onPaste={(e) => {
+                      // Get pasted text and apply immediately
+                      const pastedText = e.clipboardData.getData('text');
+                      if (pastedText) {
+                        setTimeout(() => handleUrlChange(pastedText), 0);
+                      }
+                    }}
+                    placeholder="Coller une URL d'image..."
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
+                  />
                 </div>
-                {showUrlInput && (
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      value={imageUrlInput}
-                      onChange={(e) => setImageUrlInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleUrlSubmit();
-                        }
-                      }}
-                      placeholder="https://..."
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleUrlSubmit}
-                      disabled={!imageUrlInput.trim()}
-                      className="px-3 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition disabled:opacity-50 text-sm"
-                    >
-                      OK
-                    </button>
-                  </div>
-                )}
                 <p className="text-xs text-gray-400">Glissez-déposez ou collez une URL</p>
                 {form.image_url && (
                   <>
@@ -435,7 +419,10 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
                     </label>
                     <button
                       type="button"
-                      onClick={() => setForm(prev => ({ ...prev, image_url: null, is_own_image: false }))}
+                      onClick={() => {
+                        setForm(prev => ({ ...prev, image_url: null, is_own_image: false }));
+                        setImageUrlInput('');
+                      }}
                       className="w-full text-sm text-red-500 hover:text-red-600"
                     >
                       Supprimer l'image
