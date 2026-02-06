@@ -104,28 +104,56 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
     ));
   };
 
-  // Handle paste from spreadsheet (tab-separated values)
+  // Handle paste from spreadsheet or markdown tables
   const handlePaste = (e: React.ClipboardEvent, itemIndex: number) => {
     const pastedText = e.clipboardData.getData('text');
 
-    // Check if pasted text contains tabs or newlines (spreadsheet data)
-    if (pastedText.includes('\t') || pastedText.includes('\n')) {
+    // Check if pasted text contains tabs, newlines, or pipes (spreadsheet/markdown data)
+    if (pastedText.includes('\t') || pastedText.includes('\n') || pastedText.includes('|')) {
       e.preventDefault();
 
       // Parse rows (split by newline)
-      const rows = pastedText.split(/\r?\n/).filter(row => row.trim());
+      const rows = pastedText.split(/\r?\n/).filter(row => {
+        const trimmed = row.trim();
+        // Skip empty rows, markdown header separators (---|---), and header rows
+        if (!trimmed) return false;
+        if (/^[\s|:-]+$/.test(trimmed)) return false; // Skip separator rows like |---|---|
+        return true;
+      });
 
       if (rows.length > 0) {
         const newItems = [...items];
+        let addedCount = 0;
 
-        rows.forEach((row, rowIndex) => {
-          const targetIndex = itemIndex + rowIndex;
-          // Split by tab to get columns
-          const columns = row.split('\t');
+        rows.forEach((row) => {
+          let columns: string[];
+
+          // Detect format: pipes (markdown) or tabs (spreadsheet)
+          if (row.includes('|')) {
+            // Markdown table format: | Name | Qty |
+            columns = row.split('|').map(col => col.trim()).filter(col => col);
+          } else if (row.includes('\t')) {
+            // Tab-separated format
+            columns = row.split('\t');
+          } else {
+            // Single column (just the name)
+            columns = [row.trim()];
+          }
+
           const name = columns[0]?.trim() || '';
           const quantity = parseInt(columns[1]?.trim() || '1', 10) || 1;
 
+          // Skip if name looks like a header (contains "figurine", "name", "nom", etc.)
+          const lowerName = name.toLowerCase();
+          if (lowerName === 'figurine' || lowerName === 'figurines' ||
+              lowerName === 'name' || lowerName === 'nom' ||
+              lowerName === 'quantité' || lowerName === 'quantity' ||
+              lowerName === 'qté' || lowerName === 'qty') {
+            return;
+          }
+
           if (name) {
+            const targetIndex = itemIndex + addedCount;
             if (targetIndex < newItems.length) {
               // Update existing row
               newItems[targetIndex] = {
@@ -141,6 +169,7 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
                 quantity,
               });
             }
+            addedCount++;
           }
         });
 
