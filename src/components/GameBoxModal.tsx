@@ -115,7 +115,7 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
       // Parse rows (split by newline)
       const rows = pastedText.split(/\r?\n/).filter(row => {
         const trimmed = row.trim();
-        // Skip empty rows, markdown header separators (---|---), and header rows
+        // Skip empty rows and markdown header separators (---|---)
         if (!trimmed) return false;
         if (/^[\s|:-]+$/.test(trimmed)) return false; // Skip separator rows like |---|---|
         return true;
@@ -124,6 +124,7 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
       if (rows.length > 0) {
         const newItems = [...items];
         let addedCount = 0;
+        let isFirstDataRow = true;
 
         rows.forEach((row) => {
           let columns: string[];
@@ -134,25 +135,39 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
             columns = row.split('|').map(col => col.trim()).filter(col => col);
           } else if (row.includes('\t')) {
             // Tab-separated format
-            columns = row.split('\t');
+            columns = row.split('\t').map(col => col.trim());
           } else {
             // Single column (just the name)
             columns = [row.trim()];
           }
 
           const name = columns[0]?.trim() || '';
-          const quantity = parseInt(columns[1]?.trim() || '1', 10) || 1;
 
-          // Skip if name looks like a header (contains "figurine", "name", "nom", etc.)
-          const lowerName = name.toLowerCase();
-          if (lowerName === 'figurine' || lowerName === 'figurines' ||
-              lowerName === 'name' || lowerName === 'nom' ||
-              lowerName === 'quantité' || lowerName === 'quantity' ||
-              lowerName === 'qté' || lowerName === 'qty') {
-            return;
+          // Parse quantity - handle formats like "2", "x2", "2x", "×2"
+          let quantity = 1;
+          if (columns[1]) {
+            const qtyStr = columns[1].trim().toLowerCase().replace(/[x×]/g, '');
+            const parsed = parseInt(qtyStr, 10);
+            if (!isNaN(parsed) && parsed > 0) {
+              quantity = parsed;
+            }
           }
 
-          if (name) {
+          // Only skip if first row AND looks like a header
+          const lowerName = name.toLowerCase();
+          const isHeader = lowerName === 'figurine' || lowerName === 'figurines' ||
+              lowerName === 'name' || lowerName === 'nom' || lowerName === 'miniature' ||
+              lowerName === 'quantité' || lowerName === 'quantity' ||
+              lowerName === 'qté' || lowerName === 'qty' || lowerName === 'unit' ||
+              lowerName === 'unité' || lowerName === 'unités';
+
+          if (isFirstDataRow && isHeader) {
+            isFirstDataRow = false;
+            return; // Skip header row
+          }
+          isFirstDataRow = false;
+
+          if (name && name.length > 0) {
             const targetIndex = itemIndex + addedCount;
             if (targetIndex < newItems.length) {
               // Update existing row
