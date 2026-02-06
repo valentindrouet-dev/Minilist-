@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { X, Download, Upload, FileSpreadsheet, CheckCircle, AlertCircle, FileDown, Cloud, Loader2, Image } from 'lucide-react';
 import { useFigurines } from '../context/FigurineContext';
 import { generateCSVTemplate, exportToCSV, parseCSV, downloadFile, importFigurinesFromCSV } from '../services/csvService';
-import { uploadToImgur, isBase64Image } from '../services/imgurService';
+import { uploadToImgBB, isBase64Image } from '../services/imgurService';
 
 interface ImportExportModalProps {
   onClose: () => void;
@@ -73,7 +73,7 @@ export function ImportExportModal({ onClose }: ImportExportModalProps) {
       setMigrationProgress(prev => ({ ...prev, current: i + 1 }));
 
       try {
-        const imgurUrl = await uploadToImgur(figurine.image_url!);
+        const imgurUrl = await uploadToImgBB(figurine.image_url!);
         await updateFigurine(figurine.id, { image_url: imgurUrl });
         successCount++;
         setMigrationProgress(prev => ({ ...prev, success: successCount }));
@@ -388,7 +388,7 @@ export function ImportExportModal({ onClose }: ImportExportModalProps) {
               {/* Explanation */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
                 <p className="font-medium mb-1">Pourquoi migrer les images ?</p>
-                <p>Les images stockées localement (base64) occupent beaucoup d'espace (~5-10 Mo max). En les migrant vers Imgur (gratuit), vous libérez de l'espace et évitez les erreurs.</p>
+                <p>Les images stockées localement (base64) occupent beaucoup d'espace (~5-10 Mo max). En les migrant vers ImgBB (gratuit), vous libérez de l'espace et évitez les erreurs.</p>
               </div>
 
               {/* Stats */}
@@ -428,7 +428,7 @@ export function ImportExportModal({ onClose }: ImportExportModalProps) {
                       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
                         <p className="font-medium">Avant de commencer :</p>
                         <ul className="list-disc list-inside mt-1 space-y-1">
-                          <li>Les images seront uploadées sur Imgur (service gratuit)</li>
+                          <li>Les images seront uploadées sur ImgBB (service gratuit)</li>
                           <li>La migration peut prendre plusieurs minutes</li>
                           <li>Ne fermez pas cette fenêtre pendant le processus</li>
                         </ul>
@@ -438,7 +438,7 @@ export function ImportExportModal({ onClose }: ImportExportModalProps) {
                         className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition font-medium"
                       >
                         <Cloud size={20} />
-                        Migrer {imageStats.base64Count} images vers Imgur
+                        Migrer {imageStats.base64Count} images vers ImgBB
                       </button>
                     </>
                   )}
