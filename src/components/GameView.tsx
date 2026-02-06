@@ -276,7 +276,7 @@ export function GameView({
                     }`}
                   >
                     {/* Image */}
-                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-200 mb-1.5">
+                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border border-gray-200 mb-1.5">
                       {figurine.image_url ? (
                         <img
                           src={figurine.image_url}

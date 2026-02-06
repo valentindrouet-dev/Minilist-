@@ -104,6 +104,51 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
     ));
   };
 
+  // Handle paste from spreadsheet (tab-separated values)
+  const handlePaste = (e: React.ClipboardEvent, itemIndex: number) => {
+    const pastedText = e.clipboardData.getData('text');
+
+    // Check if pasted text contains tabs or newlines (spreadsheet data)
+    if (pastedText.includes('\t') || pastedText.includes('\n')) {
+      e.preventDefault();
+
+      // Parse rows (split by newline)
+      const rows = pastedText.split(/\r?\n/).filter(row => row.trim());
+
+      if (rows.length > 0) {
+        const newItems = [...items];
+
+        rows.forEach((row, rowIndex) => {
+          const targetIndex = itemIndex + rowIndex;
+          // Split by tab to get columns
+          const columns = row.split('\t');
+          const name = columns[0]?.trim() || '';
+          const quantity = parseInt(columns[1]?.trim() || '1', 10) || 1;
+
+          if (name) {
+            if (targetIndex < newItems.length) {
+              // Update existing row
+              newItems[targetIndex] = {
+                ...newItems[targetIndex],
+                name,
+                quantity,
+              };
+            } else {
+              // Add new row
+              newItems.push({
+                id: crypto.randomUUID(),
+                name,
+                quantity,
+              });
+            }
+          }
+        });
+
+        setItems(newItems);
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -316,6 +361,7 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
                       type="text"
                       value={item.name}
                       onChange={(e) => updateItem(item.id, { name: e.target.value })}
+                      onPaste={(e) => handlePaste(e, index)}
                       placeholder={`Figurine ${index + 1}`}
                       className="flex-1 px-3 py-2 border-0 focus:ring-0 outline-none bg-transparent"
                     />
