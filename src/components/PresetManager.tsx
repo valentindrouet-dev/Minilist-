@@ -499,7 +499,7 @@ export function PresetManager({ onClose }: PresetManagerProps) {
               placeholder="Nouvelle marque..."
             />
             <PresetCard
-              title="Univers"
+              title="Systèmes"
               icon={<Globe size={18} />}
               items={presets.universes}
               field="universes"
@@ -508,7 +508,7 @@ export function PresetManager({ onClose }: PresetManagerProps) {
               onEdit={(oldVal, newVal) => editPresetItem('universes', oldVal, newVal)}
               onMove={(idx, dir) => movePresetItem('universes', idx, dir)}
               onSortAlpha={() => sortPresetAlpha('universes')}
-              placeholder="Nouvel univers..."
+              placeholder="Nouveau système..."
             />
             <PresetCard
               title="Espèces"

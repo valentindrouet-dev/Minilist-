@@ -332,29 +332,35 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Marque</label>
-              <select
+              <input
+                type="text"
+                list="brands-list"
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
+                placeholder="Sélectionner ou ajouter..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-              >
-                <option value="">Sélectionner</option>
+              />
+              <datalist id="brands-list">
                 {presets.brands.map(b => (
-                  <option key={b} value={b}>{b}</option>
+                  <option key={b} value={b} />
                 ))}
-              </select>
+              </datalist>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Système</label>
-              <select
+              <input
+                type="text"
+                list="universes-list"
                 value={universe}
                 onChange={(e) => setUniverse(e.target.value)}
+                placeholder="Sélectionner ou ajouter..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-              >
-                <option value="">Sélectionner</option>
+              />
+              <datalist id="universes-list">
                 {presets.universes.map(u => (
-                  <option key={u} value={u}>{u}</option>
+                  <option key={u} value={u} />
                 ))}
-              </select>
+              </datalist>
             </div>
           </div>
 

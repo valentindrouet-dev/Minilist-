@@ -138,6 +138,12 @@ function CollectionPage() {
     });
   };
 
+  const handleDeleteGame = async (figurineIds: string[]) => {
+    for (const id of figurineIds) {
+      await deleteFigurine(id);
+    }
+  };
+
   const handleSaveGameInfo = async (updates: { brand?: string; universe?: string; collection?: string; price?: number | null }) => {
     if (!editingGame) return;
 
@@ -333,6 +339,7 @@ function CollectionPage() {
             selectedIds={selectedIds}
             onSelect={handleSelect}
             onEditGame={handleEditGame}
+            onDeleteGame={handleDeleteGame}
             metadataVersion={gameMetadataVersion}
           />
         )}

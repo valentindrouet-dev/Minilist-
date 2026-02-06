@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Package, ChevronDown, ChevronUp, Image as ImageIcon, Edit2 } from 'lucide-react';
+import { Package, ChevronDown, ChevronUp, Image as ImageIcon, Edit2, Trash2 } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
 import { getGameMetadata } from '../services/gameMetadata';
 import type { Figurine } from '../types';
@@ -24,6 +24,7 @@ interface GameViewProps {
   selectedIds: Set<string>;
   onSelect: (id: string) => void;
   onEditGame?: (game: GameGroup) => void;
+  onDeleteGame?: (figurineIds: string[]) => void;
   metadataVersion?: number;
 }
 
@@ -35,6 +36,7 @@ export function GameView({
   selectedIds,
   onSelect,
   onEditGame,
+  onDeleteGame,
   metadataVersion,
 }: GameViewProps) {
   const { presets } = usePresets();
@@ -186,19 +188,38 @@ export function GameView({
                   )}
                 </div>
 
-                {/* Edit button */}
-                {onEditGame && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEditGame(group);
-                    }}
-                    className="absolute top-2 right-10 p-1.5 bg-black/40 hover:bg-black/60 text-white rounded-full transition opacity-0 group-hover:opacity-100"
-                    title="Modifier les infos du jeu"
-                  >
-                    <Edit2 size={14} />
-                  </button>
-                )}
+                {/* Edit & Delete buttons */}
+                <div className="absolute top-2 right-10 flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                  {onEditGame && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditGame(group);
+                      }}
+                      className="p-1.5 bg-black/40 hover:bg-black/60 text-white rounded-full transition"
+                      title="Modifier les infos du jeu"
+                    >
+                      <Edit2 size={14} />
+                    </button>
+                  )}
+                  {onDeleteGame && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Supprimer la boîte "${group.game}" et ses ${group.totalQuantity} figurine${group.totalQuantity > 1 ? 's' : ''} ?`)) {
+                          onDeleteGame(group.figurines.map(f => f.id));
+                          if (expandedGame === group.game) {
+                            setExpandedGame(null);
+                          }
+                        }
+                      }}
+                      className="p-1.5 bg-black/40 hover:bg-red-600 text-white rounded-full transition"
+                      title="Supprimer la boîte et ses figurines"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
 
                 {/* Game info */}
                 <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
