@@ -12,3 +12,5 @@ export { PresetManager } from './PresetManager';
 export { ImportExportModal } from './ImportExportModal';
 export { BatchEditModal } from './BatchEditModal';
 export { MultiAddModal } from './MultiAddModal';
+export { GameBoxModal } from './GameBoxModal';
+export { GameView } from './GameView';

@@ -220,7 +220,7 @@ export const GRID_SIZES = [
 
 export type GridSize = typeof GRID_SIZES[number]['value'];
 
-export type ViewMode = 'grid' | 'table';
+export type ViewMode = 'grid' | 'table' | 'game';
 
 // Helper function to get all subspecies as flat array (for backward compatibility)
 export function getAllSubspecies(presets: Presets): string[] {

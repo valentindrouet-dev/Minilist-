@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { FigurineProvider, useFigurines } from './context/FigurineContext';
 import { PresetProvider } from './context/PresetContext';
-import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineTable, FigurineForm, FigurineDetailModal, StatsPage, ViewControls, PresetManager, ImportExportModal, BatchEditModal, MultiAddModal } from './components';
+import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineTable, FigurineForm, FigurineDetailModal, StatsPage, ViewControls, PresetManager, ImportExportModal, BatchEditModal, MultiAddModal, GameBoxModal, GameView } from './components';
 import type { Figurine, FigurineInput, BatchEditInput, ViewMode } from './types';
 import { isSupabaseConfigured } from './services/supabase';
-import { AlertCircle, Download, Upload, CheckSquare, Edit3 } from 'lucide-react';
-import { figurineService } from './services/supabase';
+import { CheckSquare, Edit3 } from 'lucide-react';
 
 const VIEW_MODE_KEY = 'minilist_view_mode';
 
@@ -37,6 +36,7 @@ function CollectionPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [showMultiAdd, setShowMultiAdd] = useState(false);
+  const [showGameBox, setShowGameBox] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
   const [showImportExport, setShowImportExport] = useState(false);
   const [showBatchEdit, setShowBatchEdit] = useState(false);
@@ -102,35 +102,10 @@ function CollectionPage() {
     }
   };
 
-  const handleExport = () => {
-    const data = figurineService.exportData();
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `minilist-export-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImport = async () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const text = await file.text();
-        try {
-          const count = await figurineService.importData(text);
-          alert(`${count} figurines importées avec succès !`);
-          window.location.reload();
-        } catch {
-          alert('Erreur lors de l\'import : fichier invalide');
-        }
-      }
-    };
-    input.click();
+  const handleGameBoxAdd = async (items: FigurineInput[]) => {
+    for (const item of items) {
+      await addFigurine(item);
+    }
   };
 
   // Selection handlers
@@ -172,7 +147,14 @@ function CollectionPage() {
     <>
       {/* Fixed header section */}
       <div className="fixed top-0 left-0 right-0 z-40 bg-gray-50">
-        <Header onAddClick={handleAddClick} onMultiAddClick={() => setShowMultiAdd(true)} onSettingsClick={() => setShowPresets(true)} onImportExportClick={() => setShowImportExport(true)} />
+        <Header
+          onAddClick={handleAddClick}
+          onMultiAddClick={() => setShowMultiAdd(true)}
+          onGameBoxClick={() => setShowGameBox(true)}
+          onSettingsClick={() => setShowPresets(true)}
+          onImportExportClick={() => setShowImportExport(true)}
+          isLocalMode={!isSupabaseConfigured()}
+        />
 
         <div className="max-w-7xl mx-auto px-4 pt-4 pb-3 space-y-3">
           {/* Search & Filters */}
@@ -266,36 +248,6 @@ function CollectionPage() {
       <div className={selectionMode ? 'h-[340px] sm:h-[300px]' : 'h-[280px] sm:h-[240px]'} />
 
       <main className="max-w-7xl mx-auto px-4 pb-6">
-        {/* Config warning */}
-        {!isSupabaseConfigured() && (
-          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-start gap-3">
-            <AlertCircle className="text-yellow-500 flex-shrink-0 mt-0.5" size={20} />
-            <div className="flex-1">
-              <p className="text-yellow-800 font-medium">Mode local activé</p>
-              <p className="text-yellow-700 text-sm mt-1">
-                Les données sont stockées uniquement sur cet appareil. Pour synchroniser entre appareils,
-                configurez Supabase dans le fichier .env
-              </p>
-              <div className="flex gap-2 mt-3">
-                <button
-                  onClick={handleExport}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-yellow-100 text-yellow-800 rounded-lg text-sm hover:bg-yellow-200 transition"
-                >
-                  <Download size={16} />
-                  Exporter
-                </button>
-                <button
-                  onClick={handleImport}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-yellow-100 text-yellow-800 rounded-lg text-sm hover:bg-yellow-200 transition"
-                >
-                  <Upload size={16} />
-                  Importer
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Error */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
@@ -303,8 +255,8 @@ function CollectionPage() {
           </div>
         )}
 
-        {/* Grid or Table view */}
-        {viewMode === 'grid' ? (
+        {/* Grid, Table, or Game view */}
+        {viewMode === 'grid' && (
           <FigurineGrid
             figurines={filteredFigurines}
             loading={loading}
@@ -317,7 +269,8 @@ function CollectionPage() {
             selectedIds={selectedIds}
             onSelect={handleSelect}
           />
-        ) : (
+        )}
+        {viewMode === 'table' && (
           <FigurineTable
             figurines={filteredFigurines}
             loading={loading}
@@ -329,6 +282,17 @@ function CollectionPage() {
             onSelect={handleSelect}
             sort={sort}
             onSortChange={setSort}
+          />
+        )}
+        {viewMode === 'game' && (
+          <GameView
+            figurines={filteredFigurines}
+            loading={loading}
+            onView={handleView}
+            onEdit={handleEdit}
+            selectionMode={selectionMode}
+            selectedIds={selectedIds}
+            onSelect={handleSelect}
           />
         )}
       </main>
@@ -381,6 +345,15 @@ function CollectionPage() {
         <MultiAddModal
           onSubmit={handleMultiAdd}
           onClose={() => setShowMultiAdd(false)}
+          onUploadImage={uploadImage}
+        />
+      )}
+
+      {/* Game box add modal */}
+      {showGameBox && (
+        <GameBoxModal
+          onSubmit={handleGameBoxAdd}
+          onClose={() => setShowGameBox(false)}
           onUploadImage={uploadImage}
         />
       )}

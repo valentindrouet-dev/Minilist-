@@ -1,4 +1,4 @@
-import { ZoomIn, ZoomOut, ArrowUpDown, ArrowUp, ArrowDown, LayoutGrid, List } from 'lucide-react';
+import { ZoomIn, ZoomOut, ArrowUpDown, ArrowUp, ArrowDown, LayoutGrid, List, Package } from 'lucide-react';
 import { GRID_SIZES, SORT_OPTIONS, type GridSize, type SortState, type ViewMode } from '../types';
 
 interface ViewControlsProps {
@@ -61,6 +61,17 @@ export function ViewControls({
           title="Vue liste"
         >
           <List size={18} />
+        </button>
+        <button
+          onClick={() => onViewModeChange('game')}
+          className={`p-2 rounded-md transition ${
+            viewMode === 'game'
+              ? 'bg-primary-100 text-primary-600'
+              : 'hover:bg-gray-100 text-gray-500'
+          }`}
+          title="Vue par jeu"
+        >
+          <Package size={18} />
         </button>
       </div>
 
