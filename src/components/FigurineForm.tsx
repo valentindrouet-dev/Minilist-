@@ -325,7 +325,8 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags, onPrev
       onClose();
     } catch (error) {
       console.error('Submit failed:', error);
-      alert('Erreur lors de l\'enregistrement');
+      const message = error instanceof Error ? error.message : 'Erreur lors de l\'enregistrement';
+      alert(message);
     } finally {
       setSubmitting(false);
     }
@@ -352,7 +353,8 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags, onPrev
       }
     } catch (error) {
       console.error('Submit failed:', error);
-      alert('Erreur lors de l\'enregistrement');
+      const message = error instanceof Error ? error.message : 'Erreur lors de l\'enregistrement';
+      alert(message);
     } finally {
       setSubmitting(false);
     }
