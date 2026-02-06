@@ -128,6 +128,41 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags, onPrev
     is_own_image: figurine.is_own_image || false,
   } : emptyForm);
 
+  // Update form when figurine changes (for navigation)
+  useEffect(() => {
+    if (figurine) {
+      setForm({
+        name: figurine.name,
+        original_name: figurine.original_name || '',
+        category: figurine.category || '',
+        brand: figurine.brand || '',
+        game: figurine.game || '',
+        collection: figurine.collection || '',
+        universe: figurine.universe || '',
+        species: figurine.species || '',
+        subspecies: figurine.subspecies || '',
+        size: figurine.size || 'Normal',
+        alignment: figurine.alignment || '',
+        group: figurine.group || '',
+        habitats: figurine.habitats || [],
+        status: figurine.status,
+        statusBreakdown: figurine.statusBreakdown || [],
+        price: figurine.price,
+        quantity: figurine.quantity || 1,
+        tags: figurine.tags,
+        notes: figurine.notes,
+        image_url: figurine.image_url,
+        is_own_image: figurine.is_own_image || false,
+      });
+      // Reset image URL input
+      setImageUrlInput(
+        figurine.image_url && (figurine.image_url.startsWith('http://') || figurine.image_url.startsWith('https://'))
+          ? figurine.image_url
+          : ''
+      );
+    }
+  }, [figurine?.id]);
+
   const toggleHabitat = (habitat: string) => {
     setForm(prev => ({
       ...prev,
