@@ -104,7 +104,7 @@ export function FigurineTable({
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="hidden md:grid md:grid-cols-12 gap-4 px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wide">
+      <div className="hidden md:grid md:grid-cols-12 gap-3 px-3 py-2 bg-gray-50 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wide">
         {selectionMode && <div className="col-span-1"></div>}
         <div className={selectionMode ? "col-span-1" : "col-span-1"}></div>
         <div className={selectionMode ? "col-span-2" : "col-span-3"}>
@@ -133,7 +133,7 @@ export function FigurineTable({
           return (
             <div
               key={figurine.id}
-              className={`grid grid-cols-12 gap-4 px-4 py-3 items-center hover:bg-gray-50 transition cursor-pointer ${
+              className={`grid grid-cols-12 gap-3 px-3 py-1.5 items-center hover:bg-gray-50 transition cursor-pointer ${
                 isSelected ? 'bg-primary-50' : ''
               }`}
               onClick={() => {
@@ -159,7 +159,7 @@ export function FigurineTable({
 
               {/* Thumbnail */}
               <div className={selectionMode ? "col-span-1" : "col-span-1"}>
-                <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+                <div className="w-8 h-8 rounded-md bg-gray-100 overflow-hidden flex-shrink-0">
                   {figurine.image_url ? (
                     <img
                       src={figurine.image_url}
@@ -168,7 +168,7 @@ export function FigurineTable({
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-300">
-                      <ImageIcon size={16} />
+                      <ImageIcon size={14} />
                     </div>
                   )}
                 </div>
@@ -176,7 +176,7 @@ export function FigurineTable({
 
               {/* Name */}
               <div className={`${selectionMode ? "col-span-2" : "col-span-3"} min-w-0`}>
-                <div className="font-medium text-gray-900 truncate">{figurine.name}</div>
+                <div className="font-medium text-sm text-gray-900 truncate">{figurine.name}</div>
                 <div className="text-xs text-gray-500 truncate md:hidden">
                   {figurine.brand} • {figurine.category}
                 </div>
@@ -198,7 +198,7 @@ export function FigurineTable({
               {/* Status */}
               <div className="col-span-1 hidden md:block">
                 {status && (
-                  <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium text-white ${status.color}`}>
+                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium text-white ${status.color}`}>
                     {status.label}
                   </span>
                 )}
@@ -210,27 +210,27 @@ export function FigurineTable({
               </div>
 
               {/* Actions */}
-              <div className="col-span-2 flex items-center justify-end gap-1">
+              <div className="col-span-2 flex items-center justify-end gap-0.5">
                 <button
                   onClick={(e) => { e.stopPropagation(); onView(figurine); }}
-                  className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition"
+                  className="p-1.5 hover:bg-gray-100 rounded text-gray-500 transition"
                   title="Voir"
                 >
-                  <Eye size={16} />
+                  <Eye size={14} />
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); onEdit(figurine); }}
-                  className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition"
+                  className="p-1.5 hover:bg-gray-100 rounded text-gray-500 transition"
                   title="Modifier"
                 >
-                  <Edit2 size={16} />
+                  <Edit2 size={14} />
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDelete(figurine); }}
-                  className="p-2 hover:bg-red-50 rounded-lg text-red-500 transition"
+                  className="p-1.5 hover:bg-red-50 rounded text-red-500 transition"
                   title="Supprimer"
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={14} />
                 </button>
               </div>
             </div>

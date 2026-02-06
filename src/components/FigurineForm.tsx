@@ -381,7 +381,7 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags, onPrev
 
       <div
         ref={formRef}
-        className="bg-white w-full sm:w-[500px] sm:max-h-[90vh] max-h-[85vh] sm:rounded-xl rounded-t-xl overflow-hidden flex flex-col"
+        className="bg-white w-full sm:w-[600px] sm:max-h-[90vh] max-h-[85vh] sm:rounded-xl rounded-t-xl overflow-hidden flex flex-col"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50">

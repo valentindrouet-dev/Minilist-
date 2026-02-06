@@ -283,21 +283,37 @@ export function GameView({
 
           {/* Figurines grid */}
           <div className="p-4">
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {expandedGameData.figurines.map(figurine => {
                 const status = presets.statuses.find(s => s.value === figurine.status);
                 const isSelected = selectedIds.has(figurine.id);
+                const quantity = figurine.quantity || 1;
 
                 return (
                   <div
                     key={figurine.id}
                     onClick={() => selectionMode ? onSelect(figurine.id) : onView(figurine)}
-                    className={`group cursor-pointer relative ${
-                      isSelected ? 'ring-2 ring-primary-500 ring-offset-2 rounded-lg' : ''
+                    className={`bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition group cursor-pointer ${
+                      isSelected ? 'border-primary-500 ring-2 ring-primary-200' : 'border-gray-200'
                     }`}
                   >
+                    {/* Selection checkbox */}
+                    {selectionMode && (
+                      <div
+                        className={`absolute top-1 left-1 z-10 w-6 h-6 rounded-full flex items-center justify-center transition
+                          ${isSelected ? 'bg-primary-500 text-white' : 'bg-white/80 border border-gray-300'}
+                        `}
+                      >
+                        {isSelected && (
+                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                    )}
+
                     {/* Image */}
-                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border border-gray-200 mb-1.5">
+                    <div className="aspect-square bg-gray-100 relative overflow-hidden">
                       {figurine.image_url ? (
                         <img
                           src={figurine.image_url}
@@ -307,40 +323,34 @@ export function GameView({
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <ImageIcon className="text-gray-400" size={24} />
+                          <ImageIcon className="text-gray-300" size={32} />
                         </div>
                       )}
-
-                      {/* Status indicator */}
-                      <div className={`absolute top-1 right-1 w-3 h-3 rounded-full ${status?.color || 'bg-gray-400'} border-2 border-white shadow`} />
 
                       {/* Quantity badge */}
-                      {figurine.quantity > 1 && (
-                        <div className="absolute top-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
-                          x{figurine.quantity}
+                      {quantity > 1 && (
+                        <div className="absolute bottom-1 right-1 px-1.5 py-0.5 bg-black/70 text-white rounded-lg text-xs font-bold">
+                          x{quantity}
                         </div>
                       )}
 
-                      {/* Selection checkbox */}
-                      {selectionMode && (
-                        <div className={`absolute bottom-1 left-1 w-5 h-5 rounded border-2 flex items-center justify-center transition ${
-                          isSelected
-                            ? 'bg-primary-500 border-primary-500 text-white'
-                            : 'bg-white/90 border-gray-300'
-                        }`}>
-                          {isSelected && (
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          )}
+                      {/* Status badge */}
+                      {status && (
+                        <div className={`absolute top-1 left-1 px-2 py-0.5 rounded-lg text-xs font-medium text-white ${status.color}`}>
+                          {status.label}
                         </div>
                       )}
                     </div>
 
-                    {/* Name */}
-                    <p className="text-xs text-gray-700 text-center truncate px-1">
-                      {figurine.name}
-                    </p>
+                    {/* Info */}
+                    <div className="p-2">
+                      <h3 className="font-medium text-sm text-gray-900 truncate" title={figurine.name}>
+                        {figurine.name}
+                      </h3>
+                      <p className="text-xs text-gray-500 truncate">
+                        {figurine.category || figurine.brand || '—'}
+                      </p>
+                    </div>
                   </div>
                 );
               })}

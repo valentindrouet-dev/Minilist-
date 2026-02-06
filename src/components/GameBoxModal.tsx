@@ -25,12 +25,8 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
   const [boxImage, setBoxImage] = useState<string | null>(null);
   const [imageUrlInput, setImageUrlInput] = useState('');
 
-  // Figurine items - start with 5 empty rows
+  // Figurine items - start with 1 empty row
   const [items, setItems] = useState<GameBoxItem[]>([
-    { id: crypto.randomUUID(), name: '', quantity: 1 },
-    { id: crypto.randomUUID(), name: '', quantity: 1 },
-    { id: crypto.randomUUID(), name: '', quantity: 1 },
-    { id: crypto.randomUUID(), name: '', quantity: 1 },
     { id: crypto.randomUUID(), name: '', quantity: 1 },
   ]);
 
@@ -83,13 +79,8 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
     }
   };
 
-  const addRows = () => {
-    const newRows = Array.from({ length: 5 }, () => ({
-      id: crypto.randomUUID(),
-      name: '',
-      quantity: 1,
-    }));
-    setItems(prev => [...prev, ...newRows]);
+  const addItem = () => {
+    setItems(prev => [...prev, { id: crypto.randomUUID(), name: '', quantity: 1 }]);
   };
 
   const removeItem = (id: string) => {
@@ -102,95 +93,6 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
     setItems(prev => prev.map(item =>
       item.id === id ? { ...item, ...updates } : item
     ));
-  };
-
-  // Handle paste from spreadsheet or markdown tables
-  const handlePaste = (e: React.ClipboardEvent, itemIndex: number) => {
-    const pastedText = e.clipboardData.getData('text');
-
-    // Check if pasted text contains tabs, newlines, or pipes (spreadsheet/markdown data)
-    if (pastedText.includes('\t') || pastedText.includes('\n') || pastedText.includes('|')) {
-      e.preventDefault();
-
-      // Parse rows (split by newline)
-      const rows = pastedText.split(/\r?\n/).filter(row => {
-        const trimmed = row.trim();
-        // Skip empty rows and markdown header separators (---|---)
-        if (!trimmed) return false;
-        if (/^[\s|:-]+$/.test(trimmed)) return false; // Skip separator rows like |---|---|
-        return true;
-      });
-
-      if (rows.length > 0) {
-        const newItems = [...items];
-        let addedCount = 0;
-        let isFirstDataRow = true;
-
-        rows.forEach((row) => {
-          let columns: string[];
-
-          // Detect format: pipes (markdown) or tabs (spreadsheet)
-          if (row.includes('|')) {
-            // Markdown table format: | Name | Qty |
-            columns = row.split('|').map(col => col.trim()).filter(col => col);
-          } else if (row.includes('\t')) {
-            // Tab-separated format
-            columns = row.split('\t').map(col => col.trim());
-          } else {
-            // Single column (just the name)
-            columns = [row.trim()];
-          }
-
-          const name = columns[0]?.trim() || '';
-
-          // Parse quantity - handle formats like "2", "x2", "2x", "×2"
-          let quantity = 1;
-          if (columns[1]) {
-            const qtyStr = columns[1].trim().toLowerCase().replace(/[x×]/g, '');
-            const parsed = parseInt(qtyStr, 10);
-            if (!isNaN(parsed) && parsed > 0) {
-              quantity = parsed;
-            }
-          }
-
-          // Only skip if first row AND looks like a header
-          const lowerName = name.toLowerCase();
-          const isHeader = lowerName === 'figurine' || lowerName === 'figurines' ||
-              lowerName === 'name' || lowerName === 'nom' || lowerName === 'miniature' ||
-              lowerName === 'quantité' || lowerName === 'quantity' ||
-              lowerName === 'qté' || lowerName === 'qty' || lowerName === 'unit' ||
-              lowerName === 'unité' || lowerName === 'unités';
-
-          if (isFirstDataRow && isHeader) {
-            isFirstDataRow = false;
-            return; // Skip header row
-          }
-          isFirstDataRow = false;
-
-          if (name && name.length > 0) {
-            const targetIndex = itemIndex + addedCount;
-            if (targetIndex < newItems.length) {
-              // Update existing row
-              newItems[targetIndex] = {
-                ...newItems[targetIndex],
-                name,
-                quantity,
-              };
-            } else {
-              // Add new row
-              newItems.push({
-                id: crypto.randomUUID(),
-                name,
-                quantity,
-              });
-            }
-            addedCount++;
-          }
-        });
-
-        setItems(newItems);
-      }
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -379,7 +281,7 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
             </div>
           </div>
 
-          {/* Figurines table */}
+          {/* Figurines list */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-700">
@@ -390,58 +292,44 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
               </span>
             </div>
 
-            {/* Table */}
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
-              {/* Header */}
-              <div className="flex bg-gray-50 border-b border-gray-200">
-                <div className="flex-1 px-3 py-2 text-sm font-medium text-gray-700">
-                  Figurines
+            <div className="space-y-2">
+              {items.map((item, index) => (
+                <div key={item.id} className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    value={item.name}
+                    onChange={(e) => updateItem(item.id, { name: e.target.value })}
+                    placeholder={`Figurine ${index + 1}`}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                    autoFocus={index === items.length - 1 && items.length > 1}
+                  />
+                  <input
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) => updateItem(item.id, { quantity: Math.max(1, parseInt(e.target.value) || 1) })}
+                    className="w-16 px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-center"
+                    title="Quantité"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeItem(item.id)}
+                    disabled={items.length === 1}
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 size={18} />
+                  </button>
                 </div>
-                <div className="w-20 px-2 py-2 text-sm font-medium text-gray-700 text-center">
-                  Qté
-                </div>
-                <div className="w-10" />
-              </div>
-
-              {/* Rows */}
-              <div className="divide-y divide-gray-100">
-                {items.map((item, index) => (
-                  <div key={item.id} className="flex items-center">
-                    <input
-                      type="text"
-                      value={item.name}
-                      onChange={(e) => updateItem(item.id, { name: e.target.value })}
-                      onPaste={(e) => handlePaste(e, index)}
-                      placeholder={`Figurine ${index + 1}`}
-                      className="flex-1 px-3 py-2 border-0 focus:ring-0 outline-none bg-transparent"
-                    />
-                    <input
-                      type="number"
-                      min="1"
-                      value={item.quantity}
-                      onChange={(e) => updateItem(item.id, { quantity: Math.max(1, parseInt(e.target.value) || 1) })}
-                      className="w-20 px-2 py-2 border-0 border-l border-gray-100 focus:ring-0 outline-none text-center bg-transparent"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeItem(item.id)}
-                      disabled={items.length === 1}
-                      className="w-10 p-2 text-gray-400 hover:text-red-500 transition disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                ))}
-              </div>
+              ))}
             </div>
 
             <button
               type="button"
-              onClick={addRows}
+              onClick={addItem}
               className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-primary-400 hover:text-primary-600 hover:bg-primary-50 transition"
             >
               <Plus size={18} />
-              Ajouter 5 lignes
+              Ajouter une figurine
             </button>
           </div>
         </form>

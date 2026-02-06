@@ -386,6 +386,7 @@ function CollectionPage() {
       {showBatchEdit && (
         <BatchEditModal
           selectedCount={selectedIds.size}
+          selectedFigurines={filteredFigurines.filter(f => selectedIds.has(f.id))}
           onSubmit={handleBatchEdit}
           onClose={() => setShowBatchEdit(false)}
         />
