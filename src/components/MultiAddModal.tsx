@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { X, Plus, Trash2, Camera, Link } from 'lucide-react';
+import { compressImage } from '../services/imageCompressor';
 import type { FigurineInput } from '../types';
 
 interface MultiAddItem {
@@ -14,20 +15,9 @@ interface MultiAddItem {
 interface MultiAddModalProps {
   onSubmit: (items: FigurineInput[]) => Promise<void>;
   onClose: () => void;
-  onUploadImage: (file: File) => Promise<string>;
 }
 
-// Convert file to base64 directly
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-export function MultiAddModal({ onSubmit, onClose, onUploadImage }: MultiAddModalProps) {
+export function MultiAddModal({ onSubmit, onClose }: MultiAddModalProps) {
   const [items, setItems] = useState<MultiAddItem[]>([
     { id: crypto.randomUUID(), name: '', image_url: null, imageUrlInput: '', dragOver: false },
   ]);
@@ -52,9 +42,9 @@ export function MultiAddModal({ onSubmit, onClose, onUploadImage }: MultiAddModa
 
   const handleImageSelect = async (id: string, file: File) => {
     try {
-      // Convert to base64 for preview and storage
-      const base64 = await fileToBase64(file);
-      updateItem(id, { image_url: base64, imageFile: file });
+      // Compress image for reliable storage
+      const compressedBase64 = await compressImage(file);
+      updateItem(id, { image_url: compressedBase64, imageFile: file });
     } catch (error) {
       console.error('Failed to process image:', error);
       alert('Erreur lors du traitement de l\'image');
@@ -109,19 +99,8 @@ export function MultiAddModal({ onSubmit, onClose, onUploadImage }: MultiAddModa
     setSubmitting(true);
     const figurines: FigurineInput[] = [];
 
-    // Process items one by one to better handle errors
+    // Process items - images are already compressed
     for (const item of validItems) {
-      let imageUrl: string | null = null;
-
-      if (item.imageFile) {
-        try {
-          imageUrl = await onUploadImage(item.imageFile);
-        } catch (error) {
-          console.error('Failed to upload image for', item.name, error);
-          // Continue without image if upload fails
-        }
-      }
-
       figurines.push({
         name: item.name.trim(),
         original_name: '',
@@ -142,7 +121,7 @@ export function MultiAddModal({ onSubmit, onClose, onUploadImage }: MultiAddModa
         quantity: 1,
         tags: [],
         notes: '',
-        image_url: imageUrl,
+        image_url: item.image_url,
         is_own_image: false,
       });
     }

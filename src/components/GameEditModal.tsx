@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { X, Camera, Link, Package } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
 import { setGameCoverImage } from '../services/gameMetadata';
+import { compressImage } from '../services/imageCompressor';
 
 interface GameInfo {
   game: string;
@@ -17,10 +18,9 @@ interface GameEditModalProps {
   gameInfo: GameInfo;
   onSave: (updates: { brand?: string; universe?: string; collection?: string; price?: number | null }) => Promise<void>;
   onClose: () => void;
-  onUploadImage: (file: File) => Promise<string>;
 }
 
-export function GameEditModal({ gameInfo, onSave, onClose, onUploadImage }: GameEditModalProps) {
+export function GameEditModal({ gameInfo, onSave, onClose }: GameEditModalProps) {
   const { presets } = usePresets();
   const [brand, setBrand] = useState(gameInfo.brand);
   const [universe, setUniverse] = useState(gameInfo.universe);
@@ -35,33 +35,16 @@ export function GameEditModal({ gameInfo, onSave, onClose, onUploadImage }: Game
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Convert file to base64 directly (more reliable than canvas compression)
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handleImageUpload = async (file: File) => {
     try {
       setUploading(true);
-      // Try using the upload service first
-      try {
-        const url = await onUploadImage(file);
-        setCoverImage(url);
-        setImageUrlInput('');
-      } catch {
-        // Fallback: convert directly to base64
-        const base64 = await fileToBase64(file);
-        setCoverImage(base64);
-        setImageUrlInput('');
-      }
+      // Compress the image for reliable storage
+      const compressedBase64 = await compressImage(file);
+      setCoverImage(compressedBase64);
+      setImageUrlInput('');
     } catch (error) {
-      console.error('Upload failed:', error);
-      alert('Erreur lors de l\'upload de l\'image. Essayez avec une image plus petite ou utilisez une URL.');
+      console.error('Image compression failed:', error);
+      alert('Erreur lors du traitement de l\'image. Essayez une autre image ou une URL.');
     } finally {
       setUploading(false);
     }

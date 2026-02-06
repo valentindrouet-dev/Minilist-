@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { X, Plus, Trash2, Camera, Link, Package } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
+import { compressImage } from '../services/imageCompressor';
 import type { FigurineInput } from '../types';
 
 interface GameBoxItem {
@@ -12,10 +13,9 @@ interface GameBoxItem {
 interface GameBoxModalProps {
   onSubmit: (items: FigurineInput[]) => Promise<void>;
   onClose: () => void;
-  onUploadImage: (file: File) => Promise<string>;
 }
 
-export function GameBoxModal({ onSubmit, onClose, onUploadImage }: GameBoxModalProps) {
+export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
   const { presets } = usePresets();
 
   // Common fields for all figurines in the box
@@ -35,31 +35,15 @@ export function GameBoxModal({ onSubmit, onClose, onUploadImage }: GameBoxModalP
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Convert file to base64 directly
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handleImageUpload = async (file: File) => {
     try {
       setUploading(true);
-      // Try using the upload service first
-      try {
-        const url = await onUploadImage(file);
-        setBoxImage(url);
-      } catch {
-        // Fallback: convert directly to base64
-        const base64 = await fileToBase64(file);
-        setBoxImage(base64);
-      }
+      // Compress image for reliable storage
+      const compressedBase64 = await compressImage(file);
+      setBoxImage(compressedBase64);
     } catch (error) {
-      console.error('Upload failed:', error);
-      alert('Erreur lors de l\'upload de l\'image. Essayez avec une URL.');
+      console.error('Image compression failed:', error);
+      alert('Erreur lors du traitement de l\'image. Essayez une autre image ou une URL.');
     } finally {
       setUploading(false);
     }

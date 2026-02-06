@@ -24,7 +24,6 @@ function CollectionPage() {
     updateFigurine,
     batchUpdateFigurines,
     deleteFigurine,
-    uploadImage,
     allBrands,
     allCategories,
     allUniverses,
@@ -341,7 +340,6 @@ function CollectionPage() {
           figurine={editingFigurine}
           onSubmit={handleSubmit}
           onClose={() => setShowForm(false)}
-          onUploadImage={uploadImage}
           existingTags={allTags}
         />
       )}
@@ -370,7 +368,6 @@ function CollectionPage() {
         <MultiAddModal
           onSubmit={handleMultiAdd}
           onClose={() => setShowMultiAdd(false)}
-          onUploadImage={uploadImage}
         />
       )}
 
@@ -379,7 +376,6 @@ function CollectionPage() {
         <GameBoxModal
           onSubmit={handleGameBoxAdd}
           onClose={() => setShowGameBox(false)}
-          onUploadImage={uploadImage}
         />
       )}
 
@@ -392,7 +388,6 @@ function CollectionPage() {
             setEditingGame(null);
             setGameMetadataVersion(v => v + 1);
           }}
-          onUploadImage={uploadImage}
         />
       )}
     </>

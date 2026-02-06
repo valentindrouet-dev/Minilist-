@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Upload, Camera, Plus, PlusCircle, Link } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
+import { compressImage } from '../services/imageCompressor';
 import type { Figurine, FigurineInput } from '../types';
 import { getSubspeciesForSpecies } from '../types';
 
@@ -66,13 +67,12 @@ interface FigurineFormProps {
   figurine?: Figurine | null;
   onSubmit: (data: FigurineInput) => Promise<void>;
   onClose: () => void;
-  onUploadImage: (file: File) => Promise<string>;
   existingTags: string[];
 }
 
 type QuickAddField = 'category' | 'brand' | 'universe' | 'species' | 'subspecies' | 'size' | 'alignment' | 'habitat' | null;
 
-export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, existingTags }: FigurineFormProps) {
+export function FigurineForm({ figurine, onSubmit, onClose, existingTags }: FigurineFormProps) {
   const { presets, addCategory, addBrand, addUniverse, addSpecies, addSubspecies, addSize, addAlignment, addHabitat } = usePresets();
   const [quickAddField, setQuickAddField] = useState<QuickAddField>(null);
 
@@ -208,36 +208,15 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
     };
   }, []);
 
-  // Convert file to base64 directly
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handleImageUpload = async (file: File) => {
     try {
       setUploading(true);
-      // Try using the upload service first
-      try {
-        const url = await onUploadImage(file);
-        setForm(prev => ({ ...prev, image_url: url }));
-      } catch (uploadError) {
-        console.error('Upload service failed, using base64 fallback:', uploadError);
-        // Fallback: convert directly to base64
-        const base64 = await fileToBase64(file);
-        setForm(prev => ({ ...prev, image_url: base64 }));
-      }
+      // Always compress the image first for reliability
+      const compressedBase64 = await compressImage(file);
+      setForm(prev => ({ ...prev, image_url: compressedBase64 }));
     } catch (error) {
-      console.error('Upload failed:', error);
-      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-        alert('Espace de stockage insuffisant. Essayez avec une image plus petite ou utilisez une URL.');
-      } else {
-        alert('Erreur lors de l\'upload de l\'image. Essayez avec une URL.');
-      }
+      console.error('Image compression failed:', error);
+      alert('Erreur lors du traitement de l\'image. Essayez une autre image ou une URL.');
     } finally {
       setUploading(false);
     }
