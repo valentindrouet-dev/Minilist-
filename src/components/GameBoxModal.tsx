@@ -180,13 +180,13 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
         alignment: '',
         group: '',
         habitats: [],
-        status: presets.statuses[0]?.value || 'unpainted',
+        status: 'unpainted', // Default status for new figurines
         statusBreakdown: [],
         price: null,
         quantity: item.quantity,
         tags: [],
         notes: '',
-        image_url: boxImage, // All figurines share the box image
+        image_url: null, // Figurines have no image by default
         is_own_image: false,
       }));
 
