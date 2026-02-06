@@ -170,9 +170,102 @@ function CollectionPage() {
 
   return (
     <>
-      <Header onAddClick={handleAddClick} onMultiAddClick={() => setShowMultiAdd(true)} onSettingsClick={() => setShowPresets(true)} onImportExportClick={() => setShowImportExport(true)} />
+      {/* Fixed header section */}
+      <div className="fixed top-0 left-0 right-0 z-40 bg-gray-50">
+        <Header onAddClick={handleAddClick} onMultiAddClick={() => setShowMultiAdd(true)} onSettingsClick={() => setShowPresets(true)} onImportExportClick={() => setShowImportExport(true)} />
 
-      <main className="max-w-7xl mx-auto px-4 py-6 pt-20">
+        <div className="max-w-7xl mx-auto px-4 pt-4 pb-3 space-y-3">
+          {/* Search & Filters */}
+          <SearchBar
+            value={filters.search}
+            onChange={(search) => setFilters(prev => ({ ...prev, search }))}
+            placeholder="Rechercher par nom, marque, catégorie, univers, tag..."
+          />
+          <FilterPanel
+            filters={filters}
+            onChange={setFilters}
+            brands={allBrands}
+            categories={allCategories}
+            universes={allUniverses}
+            species={allSpecies}
+            subspecies={allSubspecies}
+            habitats={allHabitats}
+            tags={allTags}
+          />
+
+          {/* View controls & Results count */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-gray-500">
+                {totalFigurines} figurine{totalFigurines !== 1 ? 's' : ''}
+                {filteredFigurines.length !== totalFigurines && ` (${filteredFigurines.length} entrées)`}
+                {filters.search && ` pour "${filters.search}"`}
+              </div>
+              {/* Selection mode toggle */}
+              <button
+                onClick={toggleSelectionMode}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                  selectionMode
+                    ? 'bg-primary-100 text-primary-700'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <CheckSquare size={16} />
+                {selectionMode ? 'Annuler' : 'Sélectionner'}
+              </button>
+            </div>
+            <ViewControls
+              gridSize={gridSize}
+              onGridSizeChange={setGridSize}
+              sort={sort}
+              onSortChange={setSort}
+              viewMode={viewMode}
+              onViewModeChange={handleViewModeChange}
+            />
+          </div>
+
+          {/* Selection bar */}
+          {selectionMode && (
+            <div className="p-3 bg-primary-50 border border-primary-200 rounded-xl flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-primary-800">
+                  {selectedIds.size} sélectionnée{selectedIds.size !== 1 ? 's' : ''}
+                </span>
+                <button
+                  onClick={selectAll}
+                  className="text-sm text-primary-600 hover:text-primary-800 underline"
+                >
+                  Tout sélectionner
+                </button>
+                {selectedIds.size > 0 && (
+                  <button
+                    onClick={deselectAll}
+                    className="text-sm text-primary-600 hover:text-primary-800 underline"
+                  >
+                    Désélectionner
+                  </button>
+                )}
+              </div>
+              {selectedIds.size > 0 && (
+                <button
+                  onClick={() => setShowBatchEdit(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition"
+                >
+                  <Edit3 size={16} />
+                  Modifier la sélection
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+        {/* Shadow at bottom of fixed header */}
+        <div className="h-px bg-gray-200 shadow-sm" />
+      </div>
+
+      {/* Spacer to push content below fixed header - height depends on selection mode */}
+      <div className={selectionMode ? 'h-[340px] sm:h-[300px]' : 'h-[280px] sm:h-[240px]'} />
+
+      <main className="max-w-7xl mx-auto px-4 pb-6">
         {/* Config warning */}
         {!isSupabaseConfigured() && (
           <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-start gap-3">
@@ -207,91 +300,6 @@ function CollectionPage() {
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
             {error}
-          </div>
-        )}
-
-        {/* Search & Filters */}
-        <div className="space-y-4 mb-6">
-          <SearchBar
-            value={filters.search}
-            onChange={(search) => setFilters(prev => ({ ...prev, search }))}
-            placeholder="Rechercher par nom, marque, catégorie, univers, tag..."
-          />
-          <FilterPanel
-            filters={filters}
-            onChange={setFilters}
-            brands={allBrands}
-            categories={allCategories}
-            universes={allUniverses}
-            species={allSpecies}
-            subspecies={allSubspecies}
-            habitats={allHabitats}
-            tags={allTags}
-          />
-        </div>
-
-        {/* View controls & Results count */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="text-sm text-gray-500">
-              {totalFigurines} figurine{totalFigurines !== 1 ? 's' : ''}
-              {filteredFigurines.length !== totalFigurines && ` (${filteredFigurines.length} entrées)`}
-              {filters.search && ` pour "${filters.search}"`}
-            </div>
-            {/* Selection mode toggle */}
-            <button
-              onClick={toggleSelectionMode}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                selectionMode
-                  ? 'bg-primary-100 text-primary-700'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              <CheckSquare size={16} />
-              {selectionMode ? 'Annuler' : 'Sélectionner'}
-            </button>
-          </div>
-          <ViewControls
-            gridSize={gridSize}
-            onGridSizeChange={setGridSize}
-            sort={sort}
-            onSortChange={setSort}
-            viewMode={viewMode}
-            onViewModeChange={handleViewModeChange}
-          />
-        </div>
-
-        {/* Selection bar */}
-        {selectionMode && (
-          <div className="mb-4 p-3 bg-primary-50 border border-primary-200 rounded-xl flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-primary-800">
-                {selectedIds.size} sélectionnée{selectedIds.size !== 1 ? 's' : ''}
-              </span>
-              <button
-                onClick={selectAll}
-                className="text-sm text-primary-600 hover:text-primary-800 underline"
-              >
-                Tout sélectionner
-              </button>
-              {selectedIds.size > 0 && (
-                <button
-                  onClick={deselectAll}
-                  className="text-sm text-primary-600 hover:text-primary-800 underline"
-                >
-                  Désélectionner
-                </button>
-              )}
-            </div>
-            {selectedIds.size > 0 && (
-              <button
-                onClick={() => setShowBatchEdit(true)}
-                className="flex items-center gap-1.5 px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition"
-              >
-                <Edit3 size={16} />
-                Modifier la sélection
-              </button>
-            )}
           </div>
         )}
 
