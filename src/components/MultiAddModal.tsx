@@ -127,11 +127,13 @@ export function MultiAddModal({ onSubmit, onClose, onUploadImage }: MultiAddModa
         alignment: '',
         habitats: [],
         status: 'unpainted',
+        statusBreakdown: [],
         price: null,
         quantity: 1,
         tags: [],
         notes: '',
         image_url: imageUrl,
+        is_own_image: false,
       });
     }
 

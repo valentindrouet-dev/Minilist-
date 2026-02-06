@@ -44,6 +44,7 @@ const initialFilters: FilterState = {
   habitats: [],
   status: '',
   tags: [],
+  onlyOwnImages: false,
 };
 
 const initialSort: SortState = {
@@ -108,6 +109,8 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
           habitats,
           price: f.price ?? null,
           quantity: f.quantity || 1,
+          is_own_image: f.is_own_image || false,
+          statusBreakdown: f.statusBreakdown || [],
         };
       });
       setFigurines(normalizedData);
@@ -152,10 +155,11 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
       const matchesStatus = !filters.status || fig.status === filters.status;
       const matchesTags = filters.tags.length === 0 ||
         filters.tags.every(tag => fig.tags.includes(tag));
+      const matchesOwnImage = !filters.onlyOwnImages || fig.is_own_image;
 
       return matchesSearch && matchesCategory && matchesBrand && matchesUniverse &&
              matchesSpecies && matchesSubspecies && matchesSize && matchesAlignment &&
-             matchesHabitats && matchesStatus && matchesTags;
+             matchesHabitats && matchesStatus && matchesTags && matchesOwnImage;
     });
 
     // Sort

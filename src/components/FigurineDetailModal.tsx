@@ -156,6 +156,28 @@ export function FigurineDetailModal({ figurine, onClose, onEdit }: FigurineDetai
               )}
             </div>
 
+            {/* Status breakdown */}
+            {figurine.statusBreakdown && figurine.statusBreakdown.length > 0 && (
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">Répartition des statuts</div>
+                <div className="space-y-1.5">
+                  {figurine.statusBreakdown.map((sb, idx) => {
+                    const statusInfo = presets.statuses.find(s => s.value === sb.status);
+                    return (
+                      <div key={idx} className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${statusInfo?.color || 'bg-gray-400'}`} />
+                        <span className="text-sm flex-1">{statusInfo?.label || sb.status}</span>
+                        <span className="text-sm font-medium">{sb.count}</span>
+                      </div>
+                    );
+                  })}
+                  <div className="text-xs text-gray-400 pt-1 border-t border-gray-200">
+                    Total: {figurine.statusBreakdown.reduce((sum, sb) => sum + sb.count, 0)} / {quantity}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Habitats */}
             {figurine.habitats && figurine.habitats.length > 0 && (
               <div>

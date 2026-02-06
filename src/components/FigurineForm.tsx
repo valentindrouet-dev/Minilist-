@@ -91,11 +91,13 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
     group: '',
     habitats: [],
     status: presets.statuses[0]?.value || 'unpainted',
+    statusBreakdown: [],
     price: null,
     quantity: 1,
     tags: [],
     notes: '',
     image_url: null,
+    is_own_image: false,
   };
 
   const [form, setForm] = useState<FigurineInput>(figurine ? {
@@ -113,11 +115,13 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
     group: figurine.group || '',
     habitats: figurine.habitats || [],
     status: figurine.status,
+    statusBreakdown: figurine.statusBreakdown || [],
     price: figurine.price,
     quantity: figurine.quantity || 1,
     tags: figurine.tags,
     notes: figurine.notes,
     image_url: figurine.image_url,
+    is_own_image: figurine.is_own_image || false,
   } : emptyForm);
 
   const toggleHabitat = (habitat: string) => {
@@ -419,13 +423,24 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
                 )}
                 <p className="text-xs text-gray-400">Glissez-déposez ou collez une URL</p>
                 {form.image_url && (
-                  <button
-                    type="button"
-                    onClick={() => setForm(prev => ({ ...prev, image_url: null }))}
-                    className="w-full text-sm text-red-500 hover:text-red-600"
-                  >
-                    Supprimer l'image
-                  </button>
+                  <>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.is_own_image}
+                        onChange={(e) => setForm(prev => ({ ...prev, is_own_image: e.target.checked }))}
+                        className="w-4 h-4 text-primary-500 rounded border-gray-300 focus:ring-primary-500"
+                      />
+                      <span className="text-sm text-gray-700">Ma photo</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setForm(prev => ({ ...prev, image_url: null, is_own_image: false }))}
+                      className="w-full text-sm text-red-500 hover:text-red-600"
+                    >
+                      Supprimer l'image
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -682,7 +697,7 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Statut principal</label>
               <select
                 value={form.status}
                 onChange={(e) => setForm(prev => ({ ...prev, status: e.target.value }))}
@@ -694,6 +709,81 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
               </select>
             </div>
           </div>
+
+          {/* Status breakdown for groups (when quantity > 1) */}
+          {form.quantity > 1 && (
+            <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">Répartition des statuts</label>
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({
+                    ...prev,
+                    statusBreakdown: [...prev.statusBreakdown, { status: prev.status, count: 1 }]
+                  }))}
+                  className="text-xs text-primary-500 hover:text-primary-600 flex items-center gap-1"
+                >
+                  <Plus size={14} />
+                  Ajouter
+                </button>
+              </div>
+              {form.statusBreakdown.length > 0 ? (
+                <div className="space-y-2">
+                  {form.statusBreakdown.map((sb, idx) => {
+                    const statusInfo = presets.statuses.find(s => s.value === sb.status);
+                    return (
+                      <div key={idx} className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${statusInfo?.color || 'bg-gray-400'} flex-shrink-0`} />
+                        <select
+                          value={sb.status}
+                          onChange={(e) => setForm(prev => ({
+                            ...prev,
+                            statusBreakdown: prev.statusBreakdown.map((item, i) =>
+                              i === idx ? { ...item, status: e.target.value } : item
+                            )
+                          }))}
+                          className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 outline-none"
+                        >
+                          {presets.statuses.map(s => (
+                            <option key={s.value} value={s.value}>{s.label}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="number"
+                          min="1"
+                          value={sb.count}
+                          onChange={(e) => setForm(prev => ({
+                            ...prev,
+                            statusBreakdown: prev.statusBreakdown.map((item, i) =>
+                              i === idx ? { ...item, count: Math.max(1, parseInt(e.target.value) || 1) } : item
+                            )
+                          }))}
+                          className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setForm(prev => ({
+                            ...prev,
+                            statusBreakdown: prev.statusBreakdown.filter((_, i) => i !== idx)
+                          }))}
+                          className="p-1 text-gray-400 hover:text-red-500"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                  <div className="text-xs text-gray-500">
+                    Total: {form.statusBreakdown.reduce((sum, sb) => sum + sb.count, 0)} / {form.quantity}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 italic">
+                  Ajoutez une répartition pour suivre différents statuts (ex: 10 sous-couchées, 5 peintes)
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Quantité & Prix */}
           <div className="grid grid-cols-2 gap-3">

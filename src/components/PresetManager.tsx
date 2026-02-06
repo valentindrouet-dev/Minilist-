@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { X, Plus, RotateCcw, Tag, Palette, Globe, Package, CheckCircle, Ruler, Users, MapPin, Compass } from 'lucide-react';
+import { X, Plus, RotateCcw, Tag, Palette, Globe, Package, CheckCircle, Ruler, Users, MapPin, Compass, ChevronUp, ChevronDown, SortAsc, Edit2, Check } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
 import type { StatusPreset } from '../types';
+
+type PresetField = 'categories' | 'brands' | 'universes' | 'species' | 'sizes' | 'alignments' | 'habitats';
 
 interface PresetManagerProps {
   onClose: () => void;
@@ -33,13 +35,19 @@ interface PresetCardProps {
   title: string;
   icon: React.ReactNode;
   items: string[];
+  field: PresetField;
   onAdd: (item: string) => void;
   onRemove: (item: string) => void;
+  onEdit: (oldValue: string, newValue: string) => void;
+  onMove: (index: number, direction: 'up' | 'down') => void;
+  onSortAlpha: () => void;
   placeholder?: string;
 }
 
-function PresetCard({ title, icon, items, onAdd, onRemove, placeholder }: PresetCardProps) {
+function PresetCard({ title, icon, items, onAdd, onRemove, onEdit, onMove, onSortAlpha, placeholder }: PresetCardProps) {
   const [newItem, setNewItem] = useState('');
+  const [editingItem, setEditingItem] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
 
   const handleAdd = () => {
     const item = newItem.trim();
@@ -49,14 +57,39 @@ function PresetCard({ title, icon, items, onAdd, onRemove, placeholder }: Preset
     }
   };
 
+  const startEdit = (item: string) => {
+    setEditingItem(item);
+    setEditValue(item);
+  };
+
+  const saveEdit = () => {
+    if (editingItem && editValue.trim()) {
+      onEdit(editingItem, editValue.trim());
+    }
+    setEditingItem(null);
+    setEditValue('');
+  };
+
+  const cancelEdit = () => {
+    setEditingItem(null);
+    setEditValue('');
+  };
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
         <span className="text-primary-500">{icon}</span>
         <h3 className="font-semibold text-gray-800">{title}</h3>
-        <span className="ml-auto text-xs text-gray-400 bg-gray-200 px-2 py-0.5 rounded-full">
+        <span className="text-xs text-gray-400 bg-gray-200 px-2 py-0.5 rounded-full">
           {items.length}
         </span>
+        <button
+          onClick={onSortAlpha}
+          className="ml-auto p-1 text-gray-400 hover:text-primary-500 hover:bg-gray-200 rounded transition"
+          title="Trier alphabétiquement"
+        >
+          <SortAsc size={16} />
+        </button>
       </div>
       <div className="p-3 space-y-3">
         <div className="flex gap-2">
@@ -76,20 +109,70 @@ function PresetCard({ title, icon, items, onAdd, onRemove, placeholder }: Preset
             <Plus size={18} />
           </button>
         </div>
-        <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
-          {items.map(item => (
-            <span
+        <div className="space-y-1 max-h-40 overflow-y-auto">
+          {items.map((item, index) => (
+            <div
               key={item}
-              className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm group hover:bg-gray-200 transition"
+              className="flex items-center gap-1 p-1.5 bg-gray-50 rounded group hover:bg-gray-100 transition"
             >
-              {item}
-              <button
-                onClick={() => onRemove(item)}
-                className="text-gray-400 hover:text-red-500 ml-0.5"
-              >
-                <X size={14} />
-              </button>
-            </span>
+              {editingItem === item ? (
+                <div className="flex-1 flex gap-1">
+                  <input
+                    type="text"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') saveEdit();
+                      if (e.key === 'Escape') cancelEdit();
+                    }}
+                    autoFocus
+                    className="flex-1 px-2 py-1 text-sm border border-primary-300 rounded focus:ring-1 focus:ring-primary-500 outline-none"
+                  />
+                  <button onClick={saveEdit} className="p-1 text-green-600 hover:bg-green-50 rounded">
+                    <Check size={14} />
+                  </button>
+                  <button onClick={cancelEdit} className="p-1 text-gray-400 hover:bg-gray-200 rounded">
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <span className="flex-1 text-sm text-gray-700 truncate">{item}</span>
+                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition">
+                    <button
+                      onClick={() => onMove(index, 'up')}
+                      disabled={index === 0}
+                      className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded disabled:opacity-30"
+                      title="Monter"
+                    >
+                      <ChevronUp size={14} />
+                    </button>
+                    <button
+                      onClick={() => onMove(index, 'down')}
+                      disabled={index === items.length - 1}
+                      className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded disabled:opacity-30"
+                      title="Descendre"
+                    >
+                      <ChevronDown size={14} />
+                    </button>
+                    <button
+                      onClick={() => startEdit(item)}
+                      className="p-1 text-gray-400 hover:text-primary-500 hover:bg-gray-200 rounded"
+                      title="Modifier"
+                    >
+                      <Edit2 size={14} />
+                    </button>
+                    <button
+                      onClick={() => onRemove(item)}
+                      className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded"
+                      title="Supprimer"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           ))}
           {items.length === 0 && (
             <span className="text-xs text-gray-400 italic">Aucun élément</span>
@@ -183,16 +266,32 @@ interface StatusCardProps {
   onAdd: (status: StatusPreset) => void;
   onRemove: (value: string) => void;
   onUpdate: (value: string, updates: Partial<StatusPreset>) => void;
+  onMove: (index: number, direction: 'up' | 'down') => void;
 }
 
-function StatusCard({ statuses, onAdd, onRemove, onUpdate }: StatusCardProps) {
+function StatusCard({ statuses, onAdd, onRemove, onUpdate, onMove }: StatusCardProps) {
   const [newStatus, setNewStatus] = useState<StatusPreset>({ value: '', label: '', color: 'bg-gray-400' });
+  const [editingValue, setEditingValue] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState('');
 
   const handleAdd = () => {
     if (newStatus.value.trim() && newStatus.label.trim()) {
       onAdd(newStatus);
       setNewStatus({ value: '', label: '', color: 'bg-gray-400' });
     }
+  };
+
+  const startEdit = (status: StatusPreset) => {
+    setEditingValue(status.value);
+    setEditLabel(status.label);
+  };
+
+  const saveEdit = () => {
+    if (editingValue && editLabel.trim()) {
+      onUpdate(editingValue, { label: editLabel.trim() });
+    }
+    setEditingValue(null);
+    setEditLabel('');
   };
 
   return (
@@ -240,22 +339,68 @@ function StatusCard({ statuses, onAdd, onRemove, onUpdate }: StatusCardProps) {
           ))}
         </div>
         <div className="space-y-2 max-h-48 overflow-y-auto">
-          {statuses.map(status => (
+          {statuses.map((status, index) => (
             <div
               key={status.value}
-              className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg"
+              className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg group hover:bg-gray-100 transition"
             >
               <div className={`w-4 h-4 rounded-full ${status.color} flex-shrink-0`} />
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm truncate">{status.label}</div>
-                <div className="text-xs text-gray-500">{status.value}</div>
+                {editingValue === status.value ? (
+                  <div className="flex gap-1">
+                    <input
+                      type="text"
+                      value={editLabel}
+                      onChange={(e) => setEditLabel(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveEdit();
+                        if (e.key === 'Escape') setEditingValue(null);
+                      }}
+                      autoFocus
+                      className="flex-1 px-2 py-0.5 text-sm border border-primary-300 rounded focus:ring-1 focus:ring-primary-500 outline-none"
+                    />
+                    <button onClick={saveEdit} className="p-1 text-green-600 hover:bg-green-50 rounded">
+                      <Check size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="font-medium text-sm truncate">{status.label}</div>
+                    <div className="text-xs text-gray-500">{status.value}</div>
+                  </>
+                )}
+              </div>
+              <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
+                <button
+                  onClick={() => onMove(index, 'up')}
+                  disabled={index === 0}
+                  className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded disabled:opacity-30"
+                  title="Monter"
+                >
+                  <ChevronUp size={14} />
+                </button>
+                <button
+                  onClick={() => onMove(index, 'down')}
+                  disabled={index === statuses.length - 1}
+                  className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded disabled:opacity-30"
+                  title="Descendre"
+                >
+                  <ChevronDown size={14} />
+                </button>
+                <button
+                  onClick={() => startEdit(status)}
+                  className="p-1 text-gray-400 hover:text-primary-500 hover:bg-gray-200 rounded"
+                  title="Modifier"
+                >
+                  <Edit2 size={14} />
+                </button>
               </div>
               <div className="flex gap-0.5 flex-shrink-0">
-                {COLOR_OPTIONS.slice(0, 8).map(color => (
+                {COLOR_OPTIONS.slice(0, 6).map(color => (
                   <button
                     key={color}
                     onClick={() => onUpdate(status.value, { color })}
-                    className={`w-3.5 h-3.5 rounded-full ${color} ${
+                    className={`w-3 h-3 rounded-full ${color} ${
                       status.color === color ? 'ring-1 ring-offset-1 ring-gray-400' : ''
                     }`}
                   />
@@ -288,6 +433,10 @@ export function PresetManager({ onClose }: PresetManagerProps) {
     addHabitat, removeHabitat,
     addStatus, removeStatus, updateStatus,
     resetPresets,
+    editPresetItem,
+    movePresetItem,
+    moveStatus,
+    sortPresetAlpha,
   } = usePresets();
 
   const handleReset = () => {
@@ -329,32 +478,48 @@ export function PresetManager({ onClose }: PresetManagerProps) {
               title="Catégories"
               icon={<Tag size={18} />}
               items={presets.categories}
+              field="categories"
               onAdd={addCategory}
               onRemove={removeCategory}
+              onEdit={(oldVal, newVal) => editPresetItem('categories', oldVal, newVal)}
+              onMove={(idx, dir) => movePresetItem('categories', idx, dir)}
+              onSortAlpha={() => sortPresetAlpha('categories')}
               placeholder="Nouvelle catégorie..."
             />
             <PresetCard
               title="Marques"
               icon={<Package size={18} />}
               items={presets.brands}
+              field="brands"
               onAdd={addBrand}
               onRemove={removeBrand}
+              onEdit={(oldVal, newVal) => editPresetItem('brands', oldVal, newVal)}
+              onMove={(idx, dir) => movePresetItem('brands', idx, dir)}
+              onSortAlpha={() => sortPresetAlpha('brands')}
               placeholder="Nouvelle marque..."
             />
             <PresetCard
               title="Univers"
               icon={<Globe size={18} />}
               items={presets.universes}
+              field="universes"
               onAdd={addUniverse}
               onRemove={removeUniverse}
+              onEdit={(oldVal, newVal) => editPresetItem('universes', oldVal, newVal)}
+              onMove={(idx, dir) => movePresetItem('universes', idx, dir)}
+              onSortAlpha={() => sortPresetAlpha('universes')}
               placeholder="Nouvel univers..."
             />
             <PresetCard
               title="Espèces"
               icon={<Users size={18} />}
               items={presets.species}
+              field="species"
               onAdd={addSpecies}
               onRemove={removeSpecies}
+              onEdit={(oldVal, newVal) => editPresetItem('species', oldVal, newVal)}
+              onMove={(idx, dir) => movePresetItem('species', idx, dir)}
+              onSortAlpha={() => sortPresetAlpha('species')}
               placeholder="Nouvelle espèce..."
             />
             <SubspeciesCard
@@ -367,24 +532,36 @@ export function PresetManager({ onClose }: PresetManagerProps) {
               title="Tailles"
               icon={<Ruler size={18} />}
               items={presets.sizes}
+              field="sizes"
               onAdd={addSize}
               onRemove={removeSize}
+              onEdit={(oldVal, newVal) => editPresetItem('sizes', oldVal, newVal)}
+              onMove={(idx, dir) => movePresetItem('sizes', idx, dir)}
+              onSortAlpha={() => sortPresetAlpha('sizes')}
               placeholder="Nouvelle taille..."
             />
             <PresetCard
               title="Alignements"
               icon={<Compass size={18} />}
               items={presets.alignments}
+              field="alignments"
               onAdd={addAlignment}
               onRemove={removeAlignment}
+              onEdit={(oldVal, newVal) => editPresetItem('alignments', oldVal, newVal)}
+              onMove={(idx, dir) => movePresetItem('alignments', idx, dir)}
+              onSortAlpha={() => sortPresetAlpha('alignments')}
               placeholder="Nouvel alignement..."
             />
             <PresetCard
               title="Habitats"
               icon={<MapPin size={18} />}
               items={presets.habitats}
+              field="habitats"
               onAdd={addHabitat}
               onRemove={removeHabitat}
+              onEdit={(oldVal, newVal) => editPresetItem('habitats', oldVal, newVal)}
+              onMove={(idx, dir) => movePresetItem('habitats', idx, dir)}
+              onSortAlpha={() => sortPresetAlpha('habitats')}
               placeholder="Nouvel habitat..."
             />
             <StatusCard
@@ -392,6 +569,7 @@ export function PresetManager({ onClose }: PresetManagerProps) {
               onAdd={addStatus}
               onRemove={removeStatus}
               onUpdate={updateStatus}
+              onMove={moveStatus}
             />
           </div>
         </div>

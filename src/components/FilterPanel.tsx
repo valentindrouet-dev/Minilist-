@@ -41,6 +41,7 @@ export function FilterPanel({
     filters.habitats.length > 0,
     filters.status,
     filters.tags.length > 0,
+    filters.onlyOwnImages,
   ].filter(Boolean).length;
 
   const clearFilters = () => {
@@ -56,6 +57,7 @@ export function FilterPanel({
       habitats: [],
       status: '',
       tags: [],
+      onlyOwnImages: false,
     });
   };
 
@@ -148,6 +150,13 @@ export function FilterPanel({
         onRemove: () => toggleTag(tag),
       });
     }
+    if (filters.onlyOwnImages) {
+      items.push({
+        key: 'onlyOwnImages',
+        label: 'Mes photos',
+        onRemove: () => onChange({ ...filters, onlyOwnImages: false }),
+      });
+    }
 
     return items;
   };
@@ -218,6 +227,19 @@ export function FilterPanel({
               Effacer les filtres
             </button>
           )}
+
+          {/* Own images filter */}
+          <div className="mt-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filters.onlyOwnImages}
+                onChange={(e) => onChange({ ...filters, onlyOwnImages: e.target.checked })}
+                className="w-4 h-4 text-primary-500 rounded border-gray-300 focus:ring-primary-500"
+              />
+              <span className="text-sm font-medium text-gray-700">Mes photos uniquement</span>
+            </label>
+          </div>
 
           {/* Status filter */}
           <div className="mt-3">

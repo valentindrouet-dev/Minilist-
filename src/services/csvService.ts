@@ -18,17 +18,19 @@ const CSV_HEADERS = [
   'alignment',
   'habitats',
   'status',
+  'status_breakdown',
   'price',
   'quantity',
   'tags',
   'notes',
   'image_url',
+  'is_own_image',
 ] as const;
 
-const CSV_TEMPLATE_CONTENT = `name;original_name;category;brand;game;collection;group;universe;species;subspecies;size;alignment;habitats;status;price;quantity;tags;notes;image_url
-Space Marine Intercessor;Space Marine Intercessor;Figurines;Games Workshop;Warhammer 40K;Kill Team;Ultramarines;Warhammer 40K;Humain;;Normal;Loyal Bon;;painted;35.00;5;space marine,ultramarines,sci-fi;Peint en bleu Ultramarine;
-Goblin Archer;Goblin Archer;Figurines;Reaper Miniatures;;Pathfinder Battles;;D&D / Pathfinder;Hybride;Gobelin;Petit;Chaotique Mauvais;Forêt;unpainted;4.50;10;gobelin,archer,fantasy;;
-Dragon Rouge;;Impression 3D;;;;;Fantasy;Dragon;;Gigantesque;Chaotique Neutre;Montagne,Grotte;wip;;1;dragon,boss,epic;En cours de peinture - base rouge faite;
+const CSV_TEMPLATE_CONTENT = `name;original_name;category;brand;game;collection;group;universe;species;subspecies;size;alignment;habitats;status;status_breakdown;price;quantity;tags;notes;image_url;is_own_image
+Space Marine Intercessor;Space Marine Intercessor;Figurines;Games Workshop;Warhammer 40K;Kill Team;Ultramarines;Warhammer 40K;Humain;;Normal;Loyal Bon;;painted;;35.00;5;space marine,ultramarines,sci-fi;Peint en bleu Ultramarine;;true
+Goblin Archer;Goblin Archer;Figurines;Reaper Miniatures;;Pathfinder Battles;;D&D / Pathfinder;Hybride;Gobelin;Petit;Chaotique Mauvais;Forêt;unpainted;unpainted:7|primed:3;4.50;10;gobelin,archer,fantasy;;;false
+Dragon Rouge;;Impression 3D;;;;;Fantasy;Dragon;;Gigantesque;Chaotique Neutre;Montagne,Grotte;wip;;1;1;dragon,boss,epic;En cours de peinture - base rouge faite;;false
 `;
 
 function escapeCSVField(field: string): string {
@@ -87,6 +89,11 @@ export function exportToCSV(figurines: Figurine[]): string {
   const lines: string[] = [CSV_HEADERS.join(DELIMITER)];
 
   for (const fig of figurines) {
+    // Format status breakdown as "status1:count1|status2:count2"
+    const statusBreakdownStr = (fig.statusBreakdown || [])
+      .map(sb => `${sb.status}:${sb.count}`)
+      .join('|');
+
     const row = [
       escapeCSVField(fig.name || ''),
       escapeCSVField(fig.original_name || ''),
@@ -102,11 +109,13 @@ export function exportToCSV(figurines: Figurine[]): string {
       escapeCSVField(fig.alignment || ''),
       escapeCSVField((fig.habitats || []).join(',')), // Virgules pour les habitats
       escapeCSVField(fig.status || ''),
+      escapeCSVField(statusBreakdownStr),
       escapeCSVField(fig.price != null ? String(fig.price) : ''),
       escapeCSVField(String(fig.quantity || 1)),
       escapeCSVField((fig.tags || []).join(',')), // Virgules pour les tags car ; est le séparateur
       escapeCSVField(fig.notes || ''),
       escapeCSVField(fig.image_url || ''),
+      escapeCSVField(fig.is_own_image ? 'true' : 'false'),
     ];
     lines.push(row.join(DELIMITER));
   }
@@ -164,6 +173,16 @@ export function parseCSV(csvContent: string): FigurineInput[] {
       .map(h => h.trim())
       .filter(h => h.length > 0);
 
+    // Parse status breakdown from "status1:count1|status2:count2" format
+    const statusBreakdownStr = row['status_breakdown'] || '';
+    const statusBreakdown = statusBreakdownStr
+      .split('|')
+      .filter(s => s.includes(':'))
+      .map(s => {
+        const [status, countStr] = s.split(':');
+        return { status: status.trim(), count: parseInt(countStr) || 1 };
+      });
+
     const figurine: FigurineInput = {
       name,
       original_name: row['original_name'] || '',
@@ -179,11 +198,13 @@ export function parseCSV(csvContent: string): FigurineInput[] {
       alignment: row['alignment'] || '',
       habitats,
       status: row['status'] || 'unpainted',
+      statusBreakdown,
       price: row['price'] ? parseFloat(row['price']) : null,
       quantity: parseInt(row['quantity']) || 1,
       tags,
       notes: row['notes'] || '',
       image_url: row['image_url'] || null,
+      is_own_image: row['is_own_image']?.toLowerCase() === 'true',
     };
 
     figurines.push(figurine);

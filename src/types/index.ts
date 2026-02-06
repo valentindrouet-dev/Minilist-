@@ -1,3 +1,8 @@
+export interface StatusCount {
+  status: string;
+  count: number;
+}
+
 export interface Figurine {
   id: string;
   name: string;
@@ -13,12 +18,14 @@ export interface Figurine {
   alignment: string;
   group: string;
   habitats: string[];
-  status: string;
+  status: string; // Main/default status
+  statusBreakdown: StatusCount[]; // Detailed status breakdown for groups
   price: number | null;
   quantity: number;
   tags: string[];
   notes: string;
   image_url: string | null;
+  is_own_image: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -54,6 +61,7 @@ export interface FilterState {
   habitats: string[];
   status: string;
   tags: string[];
+  onlyOwnImages: boolean;
 }
 
 export type SortField = 'name' | 'category' | 'brand' | 'game' | 'collection' | 'universe' | 'species' | 'size' | 'alignment' | 'group' | 'habitats' | 'status' | 'price' | 'created_at' | 'updated_at';

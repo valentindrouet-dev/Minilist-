@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import type { Presets, StatusPreset, SubspeciesBySpecies } from '../types';
 import { DEFAULT_PRESETS, getAllSubspecies } from '../types';
 
+type PresetField = 'categories' | 'brands' | 'universes' | 'species' | 'sizes' | 'alignments' | 'habitats';
+
 interface PresetContextType {
   presets: Presets;
   subspecies: string[]; // Flat list for backward compatibility
@@ -26,6 +28,13 @@ interface PresetContextType {
   removeStatus: (value: string) => void;
   updateStatus: (value: string, updates: Partial<StatusPreset>) => void;
   resetPresets: () => void;
+  // New: edit and reorder
+  editPresetItem: (field: PresetField, oldValue: string, newValue: string) => void;
+  reorderPreset: (field: PresetField, items: string[]) => void;
+  reorderStatuses: (statuses: StatusPreset[]) => void;
+  movePresetItem: (field: PresetField, index: number, direction: 'up' | 'down') => void;
+  moveStatus: (index: number, direction: 'up' | 'down') => void;
+  sortPresetAlpha: (field: PresetField) => void;
 }
 
 const PresetContext = createContext<PresetContextType | undefined>(undefined);
@@ -187,6 +196,51 @@ export function PresetProvider({ children }: { children: ReactNode }) {
     setPresets(DEFAULT_PRESETS);
   };
 
+  // Edit a preset item (rename)
+  const editPresetItem = (field: PresetField, oldValue: string, newValue: string) => {
+    if (oldValue === newValue || !newValue.trim()) return;
+    const items = presets[field] as string[];
+    if (items.includes(newValue)) return; // Don't allow duplicates
+    setPresets(prev => ({
+      ...prev,
+      [field]: items.map(item => item === oldValue ? newValue.trim() : item),
+    }));
+  };
+
+  // Reorder preset items (set entire list)
+  const reorderPreset = (field: PresetField, items: string[]) => {
+    setPresets(prev => ({ ...prev, [field]: items }));
+  };
+
+  // Reorder statuses
+  const reorderStatuses = (statuses: StatusPreset[]) => {
+    setPresets(prev => ({ ...prev, statuses }));
+  };
+
+  // Move a preset item up or down
+  const movePresetItem = (field: PresetField, index: number, direction: 'up' | 'down') => {
+    const items = [...(presets[field] as string[])];
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= items.length) return;
+    [items[index], items[newIndex]] = [items[newIndex], items[index]];
+    setPresets(prev => ({ ...prev, [field]: items }));
+  };
+
+  // Move a status up or down
+  const moveStatus = (index: number, direction: 'up' | 'down') => {
+    const items = [...presets.statuses];
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= items.length) return;
+    [items[index], items[newIndex]] = [items[newIndex], items[index]];
+    setPresets(prev => ({ ...prev, statuses: items }));
+  };
+
+  // Sort preset alphabetically
+  const sortPresetAlpha = (field: PresetField) => {
+    const items = [...(presets[field] as string[])];
+    setPresets(prev => ({ ...prev, [field]: sortAlpha(items) }));
+  };
+
   // Flat list of all subspecies for backward compatibility
   const subspeciesList = getAllSubspecies(presets);
 
@@ -216,6 +270,12 @@ export function PresetProvider({ children }: { children: ReactNode }) {
         removeStatus,
         updateStatus,
         resetPresets,
+        editPresetItem,
+        reorderPreset,
+        reorderStatuses,
+        movePresetItem,
+        moveStatus,
+        sortPresetAlpha,
       }}
     >
       {children}
