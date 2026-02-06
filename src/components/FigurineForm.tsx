@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Upload, Camera, Plus, PlusCircle, Link } from 'lucide-react';
+import { X, Upload, Camera, Plus, PlusCircle, Link, ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
 import { compressImage } from '../services/imageCompressor';
 import type { Figurine, FigurineInput } from '../types';
@@ -68,11 +68,15 @@ interface FigurineFormProps {
   onSubmit: (data: FigurineInput) => Promise<void>;
   onClose: () => void;
   existingTags: string[];
+  onPrevious?: () => void;
+  onNext?: () => void;
+  hasPrevious?: boolean;
+  hasNext?: boolean;
 }
 
 type QuickAddField = 'category' | 'brand' | 'universe' | 'species' | 'subspecies' | 'size' | 'alignment' | 'habitat' | null;
 
-export function FigurineForm({ figurine, onSubmit, onClose, existingTags }: FigurineFormProps) {
+export function FigurineForm({ figurine, onSubmit, onClose, existingTags, onPrevious, onNext, hasPrevious = false, hasNext = false }: FigurineFormProps) {
   const { presets, addCategory, addBrand, addUniverse, addSpecies, addSubspecies, addSize, addAlignment, addHabitat } = usePresets();
   const [quickAddField, setQuickAddField] = useState<QuickAddField>(null);
 
@@ -176,7 +180,7 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags }: Figu
     switch (quickAddField) {
       case 'category': return 'Ajouter une catégorie';
       case 'brand': return 'Ajouter une marque';
-      case 'universe': return 'Ajouter un univers';
+      case 'universe': return 'Ajouter un système';
       case 'species': return 'Ajouter une espèce';
       case 'subspecies': return `Ajouter une sous-espèce (${form.species})`;
       case 'size': return 'Ajouter une taille';
@@ -291,8 +295,55 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags }: Figu
     }
   };
 
+  // Save and navigate to previous/next figurine
+  const handleSaveAndNavigate = async (direction: 'previous' | 'next') => {
+    if (!form.name.trim()) {
+      alert('Le nom est requis');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await onSubmit(form);
+      if (direction === 'previous' && onPrevious) {
+        onPrevious();
+      } else if (direction === 'next' && onNext) {
+        onNext();
+      }
+    } catch (error) {
+      console.error('Submit failed:', error);
+      alert('Erreur lors de l\'enregistrement');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
+      {/* Previous button (only in edit mode) */}
+      {figurine && hasPrevious && onPrevious && (
+        <button
+          onClick={() => handleSaveAndNavigate('previous')}
+          disabled={submitting}
+          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 p-2 sm:p-3 bg-white/90 hover:bg-white rounded-full shadow-lg transition z-10 disabled:opacity-50"
+          title="Enregistrer et voir la précédente"
+        >
+          <ChevronLeft size={24} className="text-gray-700" />
+        </button>
+      )}
+
+      {/* Next button (only in edit mode) */}
+      {figurine && hasNext && onNext && (
+        <button
+          onClick={() => handleSaveAndNavigate('next')}
+          disabled={submitting}
+          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 p-2 sm:p-3 bg-white/90 hover:bg-white rounded-full shadow-lg transition z-10 disabled:opacity-50"
+          title="Enregistrer et voir la suivante"
+        >
+          <ChevronRight size={24} className="text-gray-700" />
+        </button>
+      )}
+
       <div
         ref={formRef}
         className="bg-white w-full sm:w-[500px] sm:max-h-[90vh] max-h-[85vh] sm:rounded-xl rounded-t-xl overflow-hidden flex flex-col"
@@ -426,8 +477,92 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags }: Figu
             />
           </div>
 
-          {/* Catégorie & Marque */}
+          {/* Marque & Système */}
           <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Marque</label>
+              <div className="flex gap-1">
+                <select
+                  value={form.brand}
+                  onChange={(e) => setForm(prev => ({ ...prev, brand: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                >
+                  <option value="">Sélectionner</option>
+                  {presets.brands.map(brand => (
+                    <option key={brand} value={brand}>{brand}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setQuickAddField('brand')}
+                  className="p-2 text-gray-500 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition"
+                  title="Ajouter une marque"
+                >
+                  <PlusCircle size={20} />
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Système</label>
+              <div className="flex gap-1">
+                <select
+                  value={form.universe}
+                  onChange={(e) => setForm(prev => ({ ...prev, universe: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                >
+                  <option value="">Sélectionner</option>
+                  {presets.universes.map(universe => (
+                    <option key={universe} value={universe}>{universe}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setQuickAddField('universe')}
+                  className="p-2 text-gray-500 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition"
+                  title="Ajouter un système"
+                >
+                  <PlusCircle size={20} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Boîte de Jeu & Collection */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Boîte de Jeu</label>
+              <input
+                type="text"
+                value={form.game}
+                onChange={(e) => setForm(prev => ({ ...prev, game: e.target.value }))}
+                placeholder="Ex: Kill Team Starter Set"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Collection</label>
+              <input
+                type="text"
+                value={form.collection}
+                onChange={(e) => setForm(prev => ({ ...prev, collection: e.target.value }))}
+                placeholder="Ex: Kill Team"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Groupe / Armée & Catégorie */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Groupe / Armée</label>
+              <input
+                type="text"
+                value={form.group}
+                onChange={(e) => setForm(prev => ({ ...prev, group: e.target.value }))}
+                placeholder="Ex: Ultramarines..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
               <div className="flex gap-1">
@@ -451,92 +586,10 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags }: Figu
                 </button>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Marque / Créateur</label>
-              <div className="flex gap-1">
-                <select
-                  value={form.brand}
-                  onChange={(e) => setForm(prev => ({ ...prev, brand: e.target.value }))}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-                >
-                  <option value="">Sélectionner</option>
-                  {presets.brands.map(brand => (
-                    <option key={brand} value={brand}>{brand}</option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => setQuickAddField('brand')}
-                  className="p-2 text-gray-500 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition"
-                  title="Ajouter une marque"
-                >
-                  <PlusCircle size={20} />
-                </button>
-              </div>
-            </div>
           </div>
 
-          {/* Jeu & Collection (champs libres) */}
+          {/* Espèce & Sous-Espèce */}
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Jeu</label>
-              <input
-                type="text"
-                value={form.game}
-                onChange={(e) => setForm(prev => ({ ...prev, game: e.target.value }))}
-                placeholder="Ex: Warhammer 40K"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Collection</label>
-              <input
-                type="text"
-                value={form.collection}
-                onChange={(e) => setForm(prev => ({ ...prev, collection: e.target.value }))}
-                placeholder="Ex: Kill Team"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Groupe / Armée (champ libre) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Groupe / Armée</label>
-            <input
-              type="text"
-              value={form.group}
-              onChange={(e) => setForm(prev => ({ ...prev, group: e.target.value }))}
-              placeholder="Ex: Ultramarines, Légion des Damnés..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-            />
-          </div>
-
-          {/* Univers & Espèce */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Univers</label>
-              <div className="flex gap-1">
-                <select
-                  value={form.universe}
-                  onChange={(e) => setForm(prev => ({ ...prev, universe: e.target.value }))}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-                >
-                  <option value="">Sélectionner</option>
-                  {presets.universes.map(universe => (
-                    <option key={universe} value={universe}>{universe}</option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => setQuickAddField('universe')}
-                  className="p-2 text-gray-500 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition"
-                  title="Ajouter un univers"
-                >
-                  <PlusCircle size={20} />
-                </button>
-              </div>
-            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Espèce</label>
               <div className="flex gap-1">
@@ -544,7 +597,6 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags }: Figu
                   value={form.species}
                   onChange={(e) => {
                     const newSpecies = e.target.value;
-                    // Reset subspecies when species changes
                     const newSubspecies = getSubspeciesForSpecies(presets, newSpecies);
                     setForm(prev => ({
                       ...prev,
@@ -569,10 +621,6 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags }: Figu
                 </button>
               </div>
             </div>
-          </div>
-
-          {/* Sous-Espèce & Taille */}
-          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Sous-Espèce</label>
               <div className="flex gap-1">
@@ -598,6 +646,10 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags }: Figu
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* Taille & Alignement */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Taille</label>
               <div className="flex gap-1">
@@ -620,10 +672,6 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags }: Figu
                 </button>
               </div>
             </div>
-          </div>
-
-          {/* Alignement & Statut */}
-          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Alignement</label>
               <div className="flex gap-1">
@@ -647,18 +695,20 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags }: Figu
                 </button>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Statut principal</label>
-              <select
-                value={form.status}
-                onChange={(e) => setForm(prev => ({ ...prev, status: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-              >
-                {presets.statuses.map(status => (
-                  <option key={status.value} value={status.value}>{status.label}</option>
-                ))}
-              </select>
-            </div>
+          </div>
+
+          {/* Statut */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Statut principal</label>
+            <select
+              value={form.status}
+              onChange={(e) => setForm(prev => ({ ...prev, status: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+            >
+              {presets.statuses.map(status => (
+                <option key={status.value} value={status.value}>{status.label}</option>
+              ))}
+            </select>
           </div>
 
           {/* Status breakdown for groups (when quantity > 1) */}

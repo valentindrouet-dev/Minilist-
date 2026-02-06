@@ -84,6 +84,23 @@ function CollectionPage() {
     }
   };
 
+  // Navigation in edit mode
+  const editingIndex = editingFigurine ? filteredFigurines.findIndex(f => f.id === editingFigurine.id) : -1;
+  const hasPreviousEdit = editingIndex > 0;
+  const hasNextEdit = editingIndex >= 0 && editingIndex < filteredFigurines.length - 1;
+
+  const handlePreviousEdit = () => {
+    if (hasPreviousEdit) {
+      setEditingFigurine(filteredFigurines[editingIndex - 1]);
+    }
+  };
+
+  const handleNextEdit = () => {
+    if (hasNextEdit) {
+      setEditingFigurine(filteredFigurines[editingIndex + 1]);
+    }
+  };
+
   const handleEdit = (figurine: Figurine) => {
     setEditingFigurine(figurine);
     setShowForm(true);
@@ -341,6 +358,10 @@ function CollectionPage() {
           onSubmit={handleSubmit}
           onClose={() => setShowForm(false)}
           existingTags={allTags}
+          onPrevious={handlePreviousEdit}
+          onNext={handleNextEdit}
+          hasPrevious={hasPreviousEdit}
+          hasNext={hasNextEdit}
         />
       )}
 
