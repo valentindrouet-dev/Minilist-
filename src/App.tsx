@@ -42,7 +42,7 @@ function CollectionPage() {
   const [showBatchEdit, setShowBatchEdit] = useState(false);
   const [editingFigurine, setEditingFigurine] = useState<Figurine | null>(null);
   const [viewingFigurine, setViewingFigurine] = useState<Figurine | null>(null);
-  const [editingGame, setEditingGame] = useState<{ game: string; brand: string; universe: string; coverImage: string | null; figurineIds: string[] } | null>(null);
+  const [editingGame, setEditingGame] = useState<{ game: string; brand: string; universe: string; collection: string; price: number | null; coverImage: string | null; figurineIds: string[] } | null>(null);
 
   // View mode (grid vs table)
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -109,17 +109,19 @@ function CollectionPage() {
     }
   };
 
-  const handleEditGame = (gameGroup: { game: string; brand: string; universe: string; coverImage: string | null; figurines: Figurine[] }) => {
+  const handleEditGame = (gameGroup: { game: string; brand: string; universe: string; collection: string; totalPrice: number | null; coverImage: string | null; figurines: Figurine[] }) => {
     setEditingGame({
       game: gameGroup.game,
       brand: gameGroup.brand,
       universe: gameGroup.universe,
+      collection: gameGroup.collection,
+      price: gameGroup.totalPrice,
       coverImage: gameGroup.coverImage,
       figurineIds: gameGroup.figurines.map(f => f.id),
     });
   };
 
-  const handleSaveGameInfo = async (updates: { brand?: string; universe?: string; image_url?: string | null }) => {
+  const handleSaveGameInfo = async (updates: { brand?: string; universe?: string; collection?: string; price?: number | null; image_url?: string | null }) => {
     if (!editingGame) return;
 
     // Update all figurines in the game with the new info
@@ -265,7 +267,7 @@ function CollectionPage() {
       </div>
 
       {/* Spacer to push content below fixed header - height depends on selection mode */}
-      <div className={selectionMode ? 'h-[340px] sm:h-[300px]' : 'h-[280px] sm:h-[240px]'} />
+      <div className={selectionMode ? 'h-[360px] sm:h-[320px]' : 'h-[300px] sm:h-[260px]'} />
 
       <main className="max-w-7xl mx-auto px-4 pb-6">
         {/* Error */}

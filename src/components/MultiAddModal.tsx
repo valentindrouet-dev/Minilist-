@@ -17,40 +17,13 @@ interface MultiAddModalProps {
   onUploadImage: (file: File) => Promise<string>;
 }
 
-// Compress image to reduce localStorage usage
-async function compressImage(file: File, maxWidth = 800, quality = 0.7): Promise<File> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      let { width, height } = img;
-
-      // Resize if larger than maxWidth
-      if (width > maxWidth) {
-        height = (height * maxWidth) / width;
-        width = maxWidth;
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(img, 0, 0, width, height);
-
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            resolve(new File([blob], file.name, { type: 'image/jpeg' }));
-          } else {
-            resolve(file);
-          }
-        },
-        'image/jpeg',
-        quality
-      );
-    };
-    img.onerror = () => resolve(file);
-    img.src = URL.createObjectURL(file);
+// Convert file to base64 directly
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
 }
 
@@ -78,10 +51,14 @@ export function MultiAddModal({ onSubmit, onClose, onUploadImage }: MultiAddModa
   };
 
   const handleImageSelect = async (id: string, file: File) => {
-    // Compress image immediately to save memory and localStorage space
-    const compressedFile = await compressImage(file);
-    const previewUrl = URL.createObjectURL(compressedFile);
-    updateItem(id, { image_url: previewUrl, imageFile: compressedFile });
+    try {
+      // Convert to base64 for preview and storage
+      const base64 = await fileToBase64(file);
+      updateItem(id, { image_url: base64, imageFile: file });
+    } catch (error) {
+      console.error('Failed to process image:', error);
+      alert('Erreur lors du traitement de l\'image');
+    }
   };
 
   const handleDragOver = (e: React.DragEvent, id: string) => {

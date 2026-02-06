@@ -6,13 +6,15 @@ interface GameInfo {
   game: string;
   brand: string;
   universe: string;
+  collection: string;
+  price: number | null;
   coverImage: string | null;
   figurineIds: string[];
 }
 
 interface GameEditModalProps {
   gameInfo: GameInfo;
-  onSave: (updates: { brand?: string; universe?: string; image_url?: string | null }) => Promise<void>;
+  onSave: (updates: { brand?: string; universe?: string; collection?: string; price?: number | null; image_url?: string | null }) => Promise<void>;
   onClose: () => void;
   onUploadImage: (file: File) => Promise<string>;
 }
@@ -21,6 +23,8 @@ export function GameEditModal({ gameInfo, onSave, onClose, onUploadImage }: Game
   const { presets } = usePresets();
   const [brand, setBrand] = useState(gameInfo.brand);
   const [universe, setUniverse] = useState(gameInfo.universe);
+  const [collection, setCollection] = useState(gameInfo.collection);
+  const [price, setPrice] = useState<number | null>(gameInfo.price);
   const [coverImage, setCoverImage] = useState(gameInfo.coverImage);
   const [imageUrlInput, setImageUrlInput] = useState(
     coverImage?.startsWith('http') ? coverImage : ''
@@ -30,47 +34,33 @@ export function GameEditModal({ gameInfo, onSave, onClose, onUploadImage }: Game
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Compress image
-  async function compressImage(file: File, maxWidth = 800, quality = 0.7): Promise<File> {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let { width, height } = img;
-        if (width > maxWidth) {
-          height = (height * maxWidth) / width;
-          width = maxWidth;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              resolve(new File([blob], file.name, { type: 'image/jpeg' }));
-            } else {
-              resolve(file);
-            }
-          },
-          'image/jpeg',
-          quality
-        );
-      };
-      img.onerror = () => resolve(file);
-      img.src = URL.createObjectURL(file);
+  // Convert file to base64 directly (more reliable than canvas compression)
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
-  }
+  };
 
   const handleImageUpload = async (file: File) => {
     try {
       setUploading(true);
-      const compressedFile = await compressImage(file);
-      const url = await onUploadImage(compressedFile);
-      setCoverImage(url);
+      // Try using the upload service first
+      try {
+        const url = await onUploadImage(file);
+        setCoverImage(url);
+        setImageUrlInput('');
+      } catch {
+        // Fallback: convert directly to base64
+        const base64 = await fileToBase64(file);
+        setCoverImage(base64);
+        setImageUrlInput('');
+      }
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('Erreur lors de l\'upload de l\'image');
+      alert('Erreur lors de l\'upload de l\'image. Essayez avec une image plus petite ou utilisez une URL.');
     } finally {
       setUploading(false);
     }
@@ -109,13 +99,19 @@ export function GameEditModal({ gameInfo, onSave, onClose, onUploadImage }: Game
   const handleSave = async () => {
     try {
       setSaving(true);
-      const updates: { brand?: string; universe?: string; image_url?: string | null } = {};
+      const updates: { brand?: string; universe?: string; collection?: string; price?: number | null; image_url?: string | null } = {};
 
       if (brand !== gameInfo.brand) {
         updates.brand = brand;
       }
       if (universe !== gameInfo.universe) {
         updates.universe = universe;
+      }
+      if (collection !== gameInfo.collection) {
+        updates.collection = collection;
+      }
+      if (price !== gameInfo.price) {
+        updates.price = price;
       }
       if (coverImage !== gameInfo.coverImage) {
         updates.image_url = coverImage;
@@ -135,7 +131,7 @@ export function GameEditModal({ gameInfo, onSave, onClose, onUploadImage }: Game
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-md rounded-xl overflow-hidden">
+      <div className="bg-white w-full max-w-md max-h-[90vh] rounded-xl overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50">
           <div className="flex items-center gap-2">
@@ -148,7 +144,7 @@ export function GameEditModal({ gameInfo, onSave, onClose, onUploadImage }: Game
         </div>
 
         {/* Content */}
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-4 overflow-y-auto flex-1">
           {/* Game name (read-only) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nom du jeu</label>
@@ -226,34 +222,60 @@ export function GameEditModal({ gameInfo, onSave, onClose, onUploadImage }: Game
             </div>
           </div>
 
-          {/* Brand */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Marque</label>
-            <select
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-            >
-              <option value="">Sélectionner</option>
-              {presets.brands.map(b => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
+          {/* Brand & Universe */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Marque</label>
+              <select
+                value={brand}
+                onChange={(e) => setBrand(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              >
+                <option value="">Sélectionner</option>
+                {presets.brands.map(b => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Univers</label>
+              <select
+                value={universe}
+                onChange={(e) => setUniverse(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              >
+                <option value="">Sélectionner</option>
+                {presets.universes.map(u => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          {/* Universe */}
+          {/* Collection (System) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Univers</label>
-            <select
-              value={universe}
-              onChange={(e) => setUniverse(e.target.value)}
+            <label className="block text-sm font-medium text-gray-700 mb-1">Système / Collection</label>
+            <input
+              type="text"
+              value={collection}
+              onChange={(e) => setCollection(e.target.value)}
+              placeholder="Ex: Kill Team, Zombicide Black Plague..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-            >
-              <option value="">Sélectionner</option>
-              {presets.universes.map(u => (
-                <option key={u} value={u}>{u}</option>
-              ))}
-            </select>
+            />
+          </div>
+
+          {/* Price */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Prix de la boîte (€)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={price ?? ''}
+              onChange={(e) => setPrice(e.target.value ? parseFloat(e.target.value) : null)}
+              placeholder="Ex: 99.99"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+            />
           </div>
         </div>
 

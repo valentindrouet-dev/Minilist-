@@ -10,6 +10,8 @@ interface GameGroup {
   totalQuantity: number;
   brand: string;
   universe: string;
+  collection: string;
+  totalPrice: number | null;
 }
 
 interface GameViewProps {
@@ -50,6 +52,8 @@ export function GameView({
           totalQuantity: 0,
           brand: fig.brand || '',
           universe: fig.universe || '',
+          collection: fig.collection || '',
+          totalPrice: null,
         });
       }
 
@@ -57,16 +61,24 @@ export function GameView({
       group.figurines.push(fig);
       group.totalQuantity += fig.quantity || 1;
 
+      // Accumulate price
+      if (fig.price != null) {
+        group.totalPrice = (group.totalPrice || 0) + fig.price;
+      }
+
       // Use the first image found as cover
       if (!group.coverImage && fig.image_url) {
         group.coverImage = fig.image_url;
       }
-      // Update brand/universe if not set
+      // Update brand/universe/collection if not set
       if (!group.brand && fig.brand) {
         group.brand = fig.brand;
       }
       if (!group.universe && fig.universe) {
         group.universe = fig.universe;
+      }
+      if (!group.collection && fig.collection) {
+        group.collection = fig.collection;
       }
     });
 

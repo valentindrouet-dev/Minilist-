@@ -208,50 +208,35 @@ export function FigurineForm({ figurine, onSubmit, onClose, onUploadImage, exist
     };
   }, []);
 
-  // Compress image to reduce size for localStorage
-  async function compressImage(file: File, maxWidth = 800, quality = 0.7): Promise<File> {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let { width, height } = img;
-        if (width > maxWidth) {
-          height = (height * maxWidth) / width;
-          width = maxWidth;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              resolve(new File([blob], file.name, { type: 'image/jpeg' }));
-            } else {
-              resolve(file);
-            }
-          },
-          'image/jpeg',
-          quality
-        );
-      };
-      img.onerror = () => resolve(file);
-      img.src = URL.createObjectURL(file);
+  // Convert file to base64 directly
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
-  }
+  };
 
   const handleImageUpload = async (file: File) => {
     try {
       setUploading(true);
-      const compressedFile = await compressImage(file);
-      const url = await onUploadImage(compressedFile);
-      setForm(prev => ({ ...prev, image_url: url }));
+      // Try using the upload service first
+      try {
+        const url = await onUploadImage(file);
+        setForm(prev => ({ ...prev, image_url: url }));
+      } catch (uploadError) {
+        console.error('Upload service failed, using base64 fallback:', uploadError);
+        // Fallback: convert directly to base64
+        const base64 = await fileToBase64(file);
+        setForm(prev => ({ ...prev, image_url: base64 }));
+      }
     } catch (error) {
       console.error('Upload failed:', error);
       if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-        alert('Espace de stockage insuffisant. Essayez avec une image plus petite.');
+        alert('Espace de stockage insuffisant. Essayez avec une image plus petite ou utilisez une URL.');
       } else {
-        alert('Erreur lors de l\'upload de l\'image');
+        alert('Erreur lors de l\'upload de l\'image. Essayez avec une URL.');
       }
     } finally {
       setUploading(false);
