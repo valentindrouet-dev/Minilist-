@@ -33,6 +33,21 @@ function CollectionPage() {
     allTags,
   } = useFigurines();
 
+  // Count active filters (excluding search)
+  const activeFiltersCount = [
+    filters.brand,
+    filters.category,
+    filters.universe,
+    filters.species,
+    filters.subspecies,
+    filters.size,
+    filters.alignment,
+    filters.habitats.length > 0,
+    filters.status,
+    filters.tags.length > 0,
+    filters.onlyOwnImages,
+  ].filter(Boolean).length;
+
   const [showForm, setShowForm] = useState(false);
   const [showMultiAdd, setShowMultiAdd] = useState(false);
   const [showGameBox, setShowGameBox] = useState(false);
@@ -106,9 +121,11 @@ function CollectionPage() {
     setShowForm(true);
   };
 
-  const handleSubmit = async (data: FigurineInput) => {
-    if (editingFigurine) {
-      await updateFigurine(editingFigurine.id, data);
+  const handleSubmit = async (data: FigurineInput, figurineId?: string) => {
+    // Use the passed figurineId if provided, fall back to editingFigurine.id
+    const idToUpdate = figurineId || editingFigurine?.id;
+    if (idToUpdate) {
+      await updateFigurine(idToUpdate, data);
     } else {
       await addFigurine(data);
     }
@@ -289,8 +306,14 @@ function CollectionPage() {
         <div className="h-px bg-gray-200 shadow-sm" />
       </div>
 
-      {/* Spacer to push content below fixed header - height depends on selection mode */}
-      <div className={selectionMode ? 'h-[400px] sm:h-[360px]' : 'h-[340px] sm:h-[300px]'} />
+      {/* Spacer to push content below fixed header - height depends on selection mode and active filters */}
+      <div className={
+        selectionMode
+          ? 'h-[400px] sm:h-[360px]'
+          : activeFiltersCount > 0
+            ? 'h-[390px] sm:h-[340px]'
+            : 'h-[340px] sm:h-[300px]'
+      } />
 
       <main className="max-w-7xl mx-auto px-4 pb-6">
         {/* Error */}

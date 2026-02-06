@@ -65,7 +65,7 @@ function QuickAddModal({ title, onAdd, onClose }: QuickAddModalProps) {
 
 interface FigurineFormProps {
   figurine?: Figurine | null;
-  onSubmit: (data: FigurineInput) => Promise<void>;
+  onSubmit: (data: FigurineInput, figurineId?: string) => Promise<void>;
   onClose: () => void;
   existingTags: string[];
   onPrevious?: () => void;
@@ -320,7 +320,8 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags, onPrev
 
     try {
       setSubmitting(true);
-      await onSubmit(form);
+      // Pass figurine ID to ensure we update the correct figurine
+      await onSubmit(form, figurine?.id);
       onClose();
     } catch (error) {
       console.error('Submit failed:', error);
@@ -337,9 +338,13 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags, onPrev
       return;
     }
 
+    // Capture the current figurine ID before any state changes
+    const currentFigurineId = figurine?.id;
+
     try {
       setSubmitting(true);
-      await onSubmit(form);
+      // Pass the captured ID explicitly to avoid closure issues
+      await onSubmit(form, currentFigurineId);
       if (direction === 'previous' && onPrevious) {
         onPrevious();
       } else if (direction === 'next' && onNext) {

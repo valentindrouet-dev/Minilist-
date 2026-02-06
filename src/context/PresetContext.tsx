@@ -118,27 +118,30 @@ export function PresetProvider({ children }: { children: ReactNode }) {
   };
 
   const addSubspecies = (species: string, subspecies: string) => {
-    const currentSubs = presets.subspeciesBySpecies[species] || [];
-    if (!currentSubs.includes(subspecies)) {
-      setPresets(prev => ({
+    setPresets(prev => {
+      const currentSubs = prev.subspeciesBySpecies[species] || [];
+      if (currentSubs.includes(subspecies)) return prev;
+      return {
         ...prev,
         subspeciesBySpecies: {
           ...prev.subspeciesBySpecies,
           [species]: sortAlpha([...currentSubs, subspecies]),
         },
-      }));
-    }
+      };
+    });
   };
 
   const removeSubspecies = (species: string, subspecies: string) => {
-    const currentSubs = presets.subspeciesBySpecies[species] || [];
-    setPresets(prev => ({
-      ...prev,
-      subspeciesBySpecies: {
-        ...prev.subspeciesBySpecies,
-        [species]: currentSubs.filter(s => s !== subspecies),
-      },
-    }));
+    setPresets(prev => {
+      const currentSubs = prev.subspeciesBySpecies[species] || [];
+      return {
+        ...prev,
+        subspeciesBySpecies: {
+          ...prev.subspeciesBySpecies,
+          [species]: currentSubs.filter(s => s !== subspecies),
+        },
+      };
+    });
   };
 
   const getSubspeciesForSpecies = (species: string): string[] => {
@@ -199,12 +202,14 @@ export function PresetProvider({ children }: { children: ReactNode }) {
   // Edit a preset item (rename)
   const editPresetItem = (field: PresetField, oldValue: string, newValue: string) => {
     if (oldValue === newValue || !newValue.trim()) return;
-    const items = presets[field] as string[];
-    if (items.includes(newValue)) return; // Don't allow duplicates
-    setPresets(prev => ({
-      ...prev,
-      [field]: items.map(item => item === oldValue ? newValue.trim() : item),
-    }));
+    setPresets(prev => {
+      const items = prev[field] as string[];
+      if (items.includes(newValue)) return prev; // Don't allow duplicates
+      return {
+        ...prev,
+        [field]: items.map(item => item === oldValue ? newValue.trim() : item),
+      };
+    });
   };
 
   // Reorder preset items (set entire list)
@@ -219,26 +224,32 @@ export function PresetProvider({ children }: { children: ReactNode }) {
 
   // Move a preset item up or down
   const movePresetItem = (field: PresetField, index: number, direction: 'up' | 'down') => {
-    const items = [...(presets[field] as string[])];
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= items.length) return;
-    [items[index], items[newIndex]] = [items[newIndex], items[index]];
-    setPresets(prev => ({ ...prev, [field]: items }));
+    setPresets(prev => {
+      const items = [...(prev[field] as string[])];
+      const newIndex = direction === 'up' ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= items.length) return prev;
+      [items[index], items[newIndex]] = [items[newIndex], items[index]];
+      return { ...prev, [field]: items };
+    });
   };
 
   // Move a status up or down
   const moveStatus = (index: number, direction: 'up' | 'down') => {
-    const items = [...presets.statuses];
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= items.length) return;
-    [items[index], items[newIndex]] = [items[newIndex], items[index]];
-    setPresets(prev => ({ ...prev, statuses: items }));
+    setPresets(prev => {
+      const items = [...prev.statuses];
+      const newIndex = direction === 'up' ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= items.length) return prev;
+      [items[index], items[newIndex]] = [items[newIndex], items[index]];
+      return { ...prev, statuses: items };
+    });
   };
 
   // Sort preset alphabetically
   const sortPresetAlpha = (field: PresetField) => {
-    const items = [...(presets[field] as string[])];
-    setPresets(prev => ({ ...prev, [field]: sortAlpha(items) }));
+    setPresets(prev => {
+      const items = [...(prev[field] as string[])];
+      return { ...prev, [field]: sortAlpha(items) };
+    });
   };
 
   // Flat list of all subspecies for backward compatibility
