@@ -18,7 +18,7 @@ interface ImgBBResponse {
  * @param base64Image - The base64 encoded image (with or without data:image prefix)
  * @returns The ImgBB URL of the uploaded image
  */
-export async function uploadToImgur(base64Image: string): Promise<string> {
+export async function uploadToImgBB(base64Image: string): Promise<string> {
   // Remove the data:image/xxx;base64, prefix if present
   const base64Data = base64Image.includes('base64,')
     ? base64Image.split('base64,')[1]
