@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Upload, CheckCircle, AlertCircle, Loader2, Image, Cloud } from 'lucide-react';
 import { useFigurines } from '../context/FigurineContext';
-import { uploadToImgur, isBase64Image } from '../services/imgurService';
+import { uploadToImgBB, isBase64Image } from '../services/imgurService';
 
 interface ImageMigrationModalProps {
   onClose: () => void;
@@ -70,7 +70,7 @@ export function ImageMigrationModal({ onClose }: ImageMigrationModalProps) {
 
       try {
         // Upload to Imgur
-        const imgurUrl = await uploadToImgur(figurine.image_url!);
+        const imgurUrl = await uploadToImgBB(figurine.image_url!);
 
         // Update figurine with new URL
         await updateFigurine(figurine.id, { image_url: imgurUrl });
