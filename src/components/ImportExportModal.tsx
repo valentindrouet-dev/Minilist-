@@ -1,14 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Download, Upload, FileSpreadsheet, CheckCircle, AlertCircle, FileDown, Cloud, Loader2, Image } from 'lucide-react';
+import { X, Download, Upload, FileSpreadsheet, CheckCircle, AlertCircle, FileDown, Cloud, Loader2, Image, Database, ArrowRight } from 'lucide-react';
 import { useFigurines } from '../context/FigurineContext';
 import { generateCSVTemplate, exportToCSV, parseCSV, downloadFile, importFigurinesFromCSV } from '../services/csvService';
 import { uploadToImgBB, isBase64Image } from '../services/imgurService';
+import { isSupabaseConfigured, figurineService } from '../services/supabase';
 
 interface ImportExportModalProps {
   onClose: () => void;
 }
 
-type Tab = 'import' | 'export' | 'images';
+type Tab = 'import' | 'export' | 'images' | 'cloud';
 
 interface ImageStats {
   base64Count: number;
@@ -33,6 +34,18 @@ export function ImportExportModal({ onClose }: ImportExportModalProps) {
   const [migrationErrors, setMigrationErrors] = useState<string[]>([]);
   const [migrationComplete, setMigrationComplete] = useState(false);
   const [currentMigrating, setCurrentMigrating] = useState('');
+
+  // Cloud/Supabase migration state
+  const [localDataCount, setLocalDataCount] = useState(0);
+  const [cloudMigrating, setCloudMigrating] = useState(false);
+  const [cloudMigrationProgress, setCloudMigrationProgress] = useState({ current: 0, total: 0 });
+  const [cloudMigrationResult, setCloudMigrationResult] = useState<{ success: number; errors: string[] } | null>(null);
+  const supabaseReady = isSupabaseConfigured();
+
+  // Check local data count
+  useEffect(() => {
+    setLocalDataCount(figurineService.getLocalCount());
+  }, []);
 
   // Calculate image stats
   useEffect(() => {
@@ -89,6 +102,36 @@ export function ImportExportModal({ onClose }: ImportExportModalProps) {
     setMigrating(false);
     setMigrationComplete(true);
     setCurrentMigrating('');
+  };
+
+  const startCloudMigration = async () => {
+    if (!supabaseReady) return;
+
+    setCloudMigrating(true);
+    setCloudMigrationResult(null);
+
+    try {
+      const result = await figurineService.migrateToSupabase((current, total) => {
+        setCloudMigrationProgress({ current, total });
+      });
+
+      setCloudMigrationResult(result);
+
+      if (result.success > 0 && result.errors.length === 0) {
+        // Clear local data only if fully successful
+        figurineService.clearLocalData();
+        setLocalDataCount(0);
+        // Refresh the app data
+        await refreshFigurines();
+      }
+    } catch (error) {
+      setCloudMigrationResult({
+        success: 0,
+        errors: [error instanceof Error ? error.message : 'Erreur de migration'],
+      });
+    } finally {
+      setCloudMigrating(false);
+    }
   };
 
   const handleDownloadTemplate = () => {
@@ -215,6 +258,22 @@ export function ImportExportModal({ onClose }: ImportExportModalProps) {
             {imageStats && imageStats.base64Count > 0 && (
               <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
                 {imageStats.base64Count > 99 ? '99+' : imageStats.base64Count}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('cloud')}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 font-medium transition border-b-2 relative ${
+              activeTab === 'cloud'
+                ? 'border-primary-500 text-primary-600 bg-primary-50'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <Database size={18} />
+            Cloud
+            {supabaseReady && localDataCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                !
               </span>
             )}
           </button>
@@ -533,6 +592,160 @@ export function ImportExportModal({ onClose }: ImportExportModalProps) {
                     Retour
                   </button>
                 </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'cloud' && (
+            <div className="space-y-4">
+              {!supabaseReady ? (
+                <>
+                  {/* Supabase not configured */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+                      <Database size={18} />
+                      Stockage Cloud avec Supabase
+                    </h3>
+                    <p className="text-sm text-blue-700 mb-3">
+                      Actuellement, vos données sont stockées localement (limite ~5-10 Mo).
+                      Avec Supabase, bénéficiez d'un stockage cloud illimité et synchronisé entre tous vos appareils.
+                    </p>
+                  </div>
+
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <h3 className="font-medium text-gray-800 mb-3">Configuration requise</h3>
+                    <ol className="text-sm text-gray-600 space-y-3 list-decimal list-inside">
+                      <li>
+                        <span className="font-medium">Créer un compte Supabase</span>
+                        <br />
+                        <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-primary-500 hover:underline ml-5">
+                          → supabase.com
+                        </a>
+                      </li>
+                      <li>
+                        <span className="font-medium">Créer un nouveau projet</span>
+                      </li>
+                      <li>
+                        <span className="font-medium">Exécuter le script SQL</span>
+                        <br />
+                        <span className="text-xs text-gray-500 ml-5">Dashboard → SQL Editor → Coller le script</span>
+                      </li>
+                      <li>
+                        <span className="font-medium">Configurer Vercel</span>
+                        <br />
+                        <span className="text-xs text-gray-500 ml-5">Ajouter les variables d'environnement</span>
+                      </li>
+                    </ol>
+                  </div>
+
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
+                    <p className="font-medium text-yellow-800 mb-1">Variables requises sur Vercel :</p>
+                    <code className="block bg-yellow-100 p-2 rounded text-xs text-yellow-900 mt-2">
+                      VITE_SUPABASE_URL=https://xxx.supabase.co<br />
+                      VITE_SUPABASE_ANON_KEY=eyJhbG...
+                    </code>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Supabase is configured */}
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h3 className="font-medium text-green-800 mb-2 flex items-center gap-2">
+                      <CheckCircle size={18} />
+                      Supabase configuré !
+                    </h3>
+                    <p className="text-sm text-green-700">
+                      Votre application utilise le stockage cloud Supabase.
+                      Vos données sont synchronisées entre tous vos appareils.
+                    </p>
+                  </div>
+
+                  {localDataCount > 0 && !cloudMigrating && !cloudMigrationResult && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                      <h3 className="font-medium text-orange-800 mb-2 flex items-center gap-2">
+                        <AlertCircle size={18} />
+                        Données locales détectées
+                      </h3>
+                      <p className="text-sm text-orange-700 mb-3">
+                        {localDataCount} figurine(s) sont encore stockées localement.
+                        Migrez-les vers Supabase pour y accéder depuis tous vos appareils.
+                      </p>
+                      <button
+                        onClick={startCloudMigration}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition font-medium"
+                      >
+                        <ArrowRight size={18} />
+                        Migrer {localDataCount} figurines vers Supabase
+                      </button>
+                    </div>
+                  )}
+
+                  {cloudMigrating && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <Loader2 className="animate-spin text-primary-500" size={24} />
+                        <div>
+                          <p className="font-medium">Migration vers Supabase...</p>
+                          <p className="text-sm text-gray-500">Cela peut prendre quelques instants</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Progression</span>
+                          <span>{cloudMigrationProgress.current} / {cloudMigrationProgress.total}</span>
+                        </div>
+                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary-500 transition-all duration-300"
+                            style={{ width: cloudMigrationProgress.total > 0 ? `${(cloudMigrationProgress.current / cloudMigrationProgress.total) * 100}%` : '0%' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {cloudMigrationResult && (
+                    <div className="space-y-4">
+                      {cloudMigrationResult.success > 0 && cloudMigrationResult.errors.length === 0 ? (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                          <CheckCircle className="mx-auto text-green-500 mb-2" size={40} />
+                          <p className="text-green-700 font-medium text-lg">Migration réussie !</p>
+                          <p className="text-sm text-green-600 mt-1">
+                            {cloudMigrationResult.success} figurines migrées vers Supabase
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                          <p className="font-medium text-red-700 mb-2">
+                            <AlertCircle size={16} className="inline mr-1" />
+                            Erreurs lors de la migration
+                          </p>
+                          <div className="text-sm text-red-600 space-y-1">
+                            {cloudMigrationResult.errors.map((error, i) => (
+                              <p key={i}>{error}</p>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => setCloudMigrationResult(null)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition"
+                      >
+                        Retour
+                      </button>
+                    </div>
+                  )}
+
+                  {localDataCount === 0 && !cloudMigrating && !cloudMigrationResult && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                      <Database className="mx-auto text-gray-400 mb-2" size={32} />
+                      <p className="text-gray-600">Toutes vos données sont dans le cloud.</p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {figurines.length} figurine(s) synchronisées
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}

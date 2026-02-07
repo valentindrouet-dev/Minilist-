@@ -30,6 +30,66 @@ const saveLocalFigurines = (figurines: Figurine[]) => {
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(figurines));
 };
 
+// Convert from database format (snake_case) to app format (camelCase)
+const fromDatabase = (row: Record<string, unknown>): Figurine => ({
+  id: row.id as string,
+  name: row.name as string,
+  original_name: row.original_name as string || '',
+  category: row.category as string || '',
+  brand: row.brand as string || '',
+  game: row.game as string || '',
+  collection: row.collection as string || '',
+  universe: row.universe as string || '',
+  species: row.species as string || '',
+  subspecies: row.subspecies as string || '',
+  size: row.size as string || 'Normal',
+  alignment: row.alignment as string || '',
+  group: row.group as string || '',
+  habitats: row.habitats as string[] || [],
+  status: row.status as string || 'unpainted',
+  statusBreakdown: row.status_breakdown as Figurine['statusBreakdown'] || [],
+  price: row.price as number | null,
+  quantity: row.quantity as number || 1,
+  tags: row.tags as string[] || [],
+  notes: row.notes as string || '',
+  image_url: row.image_url as string | null,
+  is_own_image: row.is_own_image as boolean || false,
+  created_at: row.created_at as string,
+  updated_at: row.updated_at as string,
+});
+
+// Convert from app format (camelCase) to database format (snake_case)
+const toDatabase = (figurine: Partial<FigurineInput> & { id?: string; created_at?: string; updated_at?: string }) => {
+  const result: Record<string, unknown> = {};
+
+  if (figurine.id !== undefined) result.id = figurine.id;
+  if (figurine.name !== undefined) result.name = figurine.name;
+  if (figurine.original_name !== undefined) result.original_name = figurine.original_name;
+  if (figurine.category !== undefined) result.category = figurine.category;
+  if (figurine.brand !== undefined) result.brand = figurine.brand;
+  if (figurine.game !== undefined) result.game = figurine.game;
+  if (figurine.collection !== undefined) result.collection = figurine.collection;
+  if (figurine.universe !== undefined) result.universe = figurine.universe;
+  if (figurine.species !== undefined) result.species = figurine.species;
+  if (figurine.subspecies !== undefined) result.subspecies = figurine.subspecies;
+  if (figurine.size !== undefined) result.size = figurine.size;
+  if (figurine.alignment !== undefined) result.alignment = figurine.alignment;
+  if (figurine.group !== undefined) result.group = figurine.group;
+  if (figurine.habitats !== undefined) result.habitats = figurine.habitats;
+  if (figurine.status !== undefined) result.status = figurine.status;
+  if (figurine.statusBreakdown !== undefined) result.status_breakdown = figurine.statusBreakdown;
+  if (figurine.price !== undefined) result.price = figurine.price;
+  if (figurine.quantity !== undefined) result.quantity = figurine.quantity;
+  if (figurine.tags !== undefined) result.tags = figurine.tags;
+  if (figurine.notes !== undefined) result.notes = figurine.notes;
+  if (figurine.image_url !== undefined) result.image_url = figurine.image_url;
+  if (figurine.is_own_image !== undefined) result.is_own_image = figurine.is_own_image;
+  if (figurine.created_at !== undefined) result.created_at = figurine.created_at;
+  if (figurine.updated_at !== undefined) result.updated_at = figurine.updated_at;
+
+  return result;
+};
+
 export const figurineService = {
   async getAll(): Promise<Figurine[]> {
     const client = getSupabase();
@@ -41,7 +101,7 @@ export const figurineService = {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(fromDatabase);
     }
 
     return getLocalFigurines();
@@ -58,7 +118,7 @@ export const figurineService = {
         .single();
 
       if (error) throw error;
-      return data;
+      return data ? fromDatabase(data) : null;
     }
 
     const figurines = getLocalFigurines();
@@ -77,14 +137,15 @@ export const figurineService = {
     };
 
     if (client) {
+      const dbData = toDatabase(figurine);
       const { data, error } = await client
         .from('figurines')
-        .insert(figurine)
+        .insert(dbData)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return fromDatabase(data);
     }
 
     const figurines = getLocalFigurines();
@@ -105,15 +166,16 @@ export const figurineService = {
     const now = new Date().toISOString();
 
     if (client) {
+      const dbData = toDatabase({ ...input, updated_at: now });
       const { data, error } = await client
         .from('figurines')
-        .update({ ...input, updated_at: now })
+        .update(dbData)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return fromDatabase(data);
     }
 
     const figurines = getLocalFigurines();
@@ -215,9 +277,11 @@ export const figurineService = {
     const client = getSupabase();
 
     if (client) {
+      // Convert to database format and upsert
+      const dbData = figurines.map(f => toDatabase(f));
       const { error } = await client
         .from('figurines')
-        .upsert(figurines);
+        .upsert(dbData);
 
       if (error) throw error;
     } else {
@@ -225,5 +289,63 @@ export const figurineService = {
     }
 
     return figurines.length;
+  },
+
+  // Get count of figurines in localStorage
+  getLocalCount(): number {
+    return getLocalFigurines().length;
+  },
+
+  // Check if localStorage has data to migrate
+  hasLocalData(): boolean {
+    return getLocalFigurines().length > 0;
+  },
+
+  // Migrate all data from localStorage to Supabase
+  async migrateToSupabase(onProgress?: (current: number, total: number) => void): Promise<{ success: number; errors: string[] }> {
+    const client = getSupabase();
+    if (!client) {
+      throw new Error('Supabase n\'est pas configuré');
+    }
+
+    const localFigurines = getLocalFigurines();
+    if (localFigurines.length === 0) {
+      return { success: 0, errors: [] };
+    }
+
+    let success = 0;
+    const errors: string[] = [];
+
+    // Process in batches to avoid overwhelming the API
+    const batchSize = 50;
+    for (let i = 0; i < localFigurines.length; i += batchSize) {
+      const batch = localFigurines.slice(i, i + batchSize);
+      const dbBatch = batch.map(f => toDatabase(f));
+
+      try {
+        const { error } = await client
+          .from('figurines')
+          .upsert(dbBatch, { onConflict: 'id' });
+
+        if (error) {
+          errors.push(`Lot ${Math.floor(i / batchSize) + 1}: ${error.message}`);
+        } else {
+          success += batch.length;
+        }
+      } catch (err) {
+        errors.push(`Lot ${Math.floor(i / batchSize) + 1}: ${err instanceof Error ? err.message : 'Erreur'}`);
+      }
+
+      if (onProgress) {
+        onProgress(Math.min(i + batchSize, localFigurines.length), localFigurines.length);
+      }
+    }
+
+    return { success, errors };
+  },
+
+  // Clear localStorage data (after successful migration)
+  clearLocalData(): void {
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
   }
 };
