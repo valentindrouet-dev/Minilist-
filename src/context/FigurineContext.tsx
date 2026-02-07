@@ -245,9 +245,8 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
 
     if (Object.keys(cleanInput).length === 0) return;
 
-    // Update all figurines in parallel
-    const updatePromises = ids.map(id => figurineService.update(id, cleanInput));
-    const updatedFigurines = await Promise.all(updatePromises);
+    // Use atomic batch update to avoid race conditions with localStorage
+    const updatedFigurines = await figurineService.batchUpdate(ids, cleanInput);
 
     // Update local state
     setFigurines(prev => prev.map(f => {

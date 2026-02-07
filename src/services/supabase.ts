@@ -194,6 +194,51 @@ export const figurineService = {
     return figurines[index];
   },
 
+  async batchUpdate(ids: string[], input: Partial<FigurineInput>): Promise<Figurine[]> {
+    const client = getSupabase();
+    const now = new Date().toISOString();
+
+    if (client) {
+      // For Supabase, we can run updates in parallel safely
+      const dbData = toDatabase({ ...input, updated_at: now });
+      const updatePromises = ids.map(async (id) => {
+        const { data, error } = await client
+          .from('figurines')
+          .update(dbData)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return fromDatabase(data);
+      });
+      return Promise.all(updatePromises);
+    }
+
+    // For localStorage, we need to update all figurines atomically to avoid race conditions
+    const figurines = getLocalFigurines();
+    const updatedFigurines: Figurine[] = [];
+
+    for (const id of ids) {
+      const index = figurines.findIndex(f => f.id === id);
+      if (index !== -1) {
+        figurines[index] = { ...figurines[index], ...input, updated_at: now };
+        updatedFigurines.push(figurines[index]);
+      }
+    }
+
+    try {
+      saveLocalFigurines(figurines);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        throw new Error('Espace de stockage local insuffisant.');
+      }
+      throw error;
+    }
+
+    return updatedFigurines;
+  },
+
   async delete(id: string): Promise<void> {
     const client = getSupabase();
 
