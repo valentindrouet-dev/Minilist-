@@ -53,6 +53,8 @@ export function FigurineCard({
         return figurine.size || '—';
       case 'alignment':
         return figurine.alignment || '—';
+      case 'material':
+        return figurine.material || '—';
       case 'habitats':
         return figurine.habitats?.length > 0 ? figurine.habitats.join(', ') : '—';
       case 'status':

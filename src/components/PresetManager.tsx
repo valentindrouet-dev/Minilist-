@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { X, Plus, RotateCcw, Tag, Palette, Globe, Package, CheckCircle, Ruler, Users, MapPin, Compass, ChevronUp, ChevronDown, SortAsc, Edit2, Check } from 'lucide-react';
+import { X, Plus, RotateCcw, Tag, Palette, Globe, Package, CheckCircle, Ruler, Users, MapPin, Compass, Layers, ChevronUp, ChevronDown, SortAsc, Edit2, Check } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
 import type { StatusPreset } from '../types';
 
-type PresetField = 'categories' | 'brands' | 'universes' | 'species' | 'sizes' | 'alignments' | 'habitats';
+type PresetField = 'categories' | 'brands' | 'universes' | 'species' | 'sizes' | 'alignments' | 'materials' | 'habitats';
 
 interface PresetManagerProps {
   onClose: () => void;
@@ -430,6 +430,7 @@ export function PresetManager({ onClose }: PresetManagerProps) {
     addSubspecies, removeSubspecies,
     addSize, removeSize,
     addAlignment, removeAlignment,
+    addMaterial, removeMaterial,
     addHabitat, removeHabitat,
     addStatus, removeStatus, updateStatus,
     resetPresets,
@@ -551,6 +552,18 @@ export function PresetManager({ onClose }: PresetManagerProps) {
               onMove={(idx, dir) => movePresetItem('alignments', idx, dir)}
               onSortAlpha={() => sortPresetAlpha('alignments')}
               placeholder="Nouvel alignement..."
+            />
+            <PresetCard
+              title="Matières"
+              icon={<Layers size={18} />}
+              items={presets.materials}
+              field="materials"
+              onAdd={addMaterial}
+              onRemove={removeMaterial}
+              onEdit={(oldVal, newVal) => editPresetItem('materials', oldVal, newVal)}
+              onMove={(idx, dir) => movePresetItem('materials', idx, dir)}
+              onSortAlpha={() => sortPresetAlpha('materials')}
+              placeholder="Nouvelle matière..."
             />
             <PresetCard
               title="Habitats"
