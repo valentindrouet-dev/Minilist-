@@ -1,5 +1,7 @@
-import { Edit2, Trash2, Image as ImageIcon, Eye, ChevronUp, ChevronDown } from 'lucide-react';
+import { useState } from 'react';
+import { Edit2, Trash2, Image as ImageIcon, Eye, ChevronUp, ChevronDown, Upload, Loader2 } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
+import { useImageDrop } from '../hooks/useImageDrop';
 import type { Figurine, SortState, SortField } from '../types';
 
 interface FigurineTableProps {
@@ -21,6 +23,172 @@ interface SortableHeaderProps {
   currentSort?: SortState;
   onSort?: (sort: SortState) => void;
   className?: string;
+}
+
+interface TableRowProps {
+  figurine: Figurine;
+  isSelected: boolean;
+  selectionMode: boolean;
+  onView: (figurine: Figurine) => void;
+  onEdit: (figurine: Figurine) => void;
+  onDelete: (figurine: Figurine) => void;
+  onSelect?: (id: string, shiftKey?: boolean) => void;
+}
+
+function TableRow({
+  figurine,
+  isSelected,
+  selectionMode,
+  onView,
+  onEdit,
+  onDelete,
+  onSelect,
+}: TableRowProps) {
+  const { presets } = usePresets();
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const status = presets.statuses.find(s => s.value === figurine.status);
+  const quantity = figurine.quantity || 1;
+
+  const { isDragging, isUploading, dragProps } = useImageDrop({
+    figurineId: figurine.id,
+    onSuccess: () => setUploadError(null),
+    onError: (error) => {
+      setUploadError(error);
+      setTimeout(() => setUploadError(null), 3000);
+    },
+  });
+
+  return (
+    <div
+      className={`relative grid grid-cols-12 gap-3 px-3 py-1.5 items-center hover:bg-gray-50 transition cursor-pointer ${
+        isSelected ? 'bg-primary-50' : ''
+      } ${isDragging ? 'bg-primary-100 ring-2 ring-primary-300 ring-inset' : ''}`}
+      onClick={(e) => {
+        if (selectionMode && onSelect) {
+          onSelect(figurine.id, e.shiftKey);
+        } else {
+          onView(figurine);
+        }
+      }}
+      {...dragProps}
+    >
+      {/* Upload overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 bg-primary-500/20 flex items-center justify-center z-10 pointer-events-none">
+          <div className="flex items-center gap-2 text-primary-700 font-medium">
+            <Upload size={16} />
+            <span className="text-sm">Déposer l'image</span>
+          </div>
+        </div>
+      )}
+
+      {/* Loading overlay */}
+      {isUploading && (
+        <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
+          <Loader2 size={16} className="animate-spin text-primary-500" />
+        </div>
+      )}
+
+      {/* Error toast */}
+      {uploadError && (
+        <div className="absolute top-0 left-0 right-0 z-20 px-2 py-1 bg-red-500 text-white text-xs">
+          {uploadError}
+        </div>
+      )}
+
+      {/* Checkbox */}
+      {selectionMode && (
+        <div className="col-span-1" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => {}}
+            onClick={(e) => {
+              onSelect?.(figurine.id, e.shiftKey);
+            }}
+            className="w-4 h-4 text-primary-500 rounded border-gray-300 focus:ring-primary-500 cursor-pointer"
+          />
+        </div>
+      )}
+
+      {/* Thumbnail */}
+      <div className={selectionMode ? "col-span-1" : "col-span-1"}>
+        <div className="w-8 h-8 rounded-md bg-gray-100 overflow-hidden flex-shrink-0">
+          {figurine.image_url ? (
+            <img
+              src={figurine.image_url}
+              alt={figurine.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-300">
+              <ImageIcon size={14} />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Name */}
+      <div className={`${selectionMode ? "col-span-2" : "col-span-3"} min-w-0`}>
+        <div className="font-medium text-sm text-gray-900 truncate">{figurine.name}</div>
+        <div className="text-xs text-gray-500 truncate md:hidden">
+          {figurine.brand} • {figurine.category}
+        </div>
+      </div>
+
+      {/* Brand */}
+      <div className="col-span-2 hidden md:block">
+        <span className="text-sm text-gray-600 truncate">{figurine.brand || '—'}</span>
+      </div>
+
+      {/* Category */}
+      <div className="col-span-2 hidden md:block">
+        <span className="text-sm text-gray-600 truncate">
+          {figurine.category || '—'}
+          {figurine.species && <span className="text-gray-400"> / {figurine.species}</span>}
+        </span>
+      </div>
+
+      {/* Status */}
+      <div className="col-span-1 hidden md:block">
+        {status && (
+          <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium text-white ${status.color}`}>
+            {status.label}
+          </span>
+        )}
+      </div>
+
+      {/* Quantity */}
+      <div className="col-span-1 hidden md:block">
+        <span className="text-sm text-gray-600">{quantity}</span>
+      </div>
+
+      {/* Actions */}
+      <div className="col-span-2 flex items-center justify-end gap-0.5">
+        <button
+          onClick={(e) => { e.stopPropagation(); onView(figurine); }}
+          className="p-1.5 hover:bg-gray-100 rounded text-gray-500 transition"
+          title="Voir"
+        >
+          <Eye size={14} />
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onEdit(figurine); }}
+          className="p-1.5 hover:bg-gray-100 rounded text-gray-500 transition"
+          title="Modifier"
+        >
+          <Edit2 size={14} />
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(figurine); }}
+          className="p-1.5 hover:bg-red-50 rounded text-red-500 transition"
+          title="Supprimer"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function SortableHeader({ field, label, currentSort, onSort, className = '' }: SortableHeaderProps) {
@@ -61,8 +229,6 @@ export function FigurineTable({
   sort,
   onSortChange,
 }: FigurineTableProps) {
-  const { presets } = usePresets();
-
   const handleDelete = (figurine: Figurine) => {
     if (window.confirm(`Supprimer "${figurine.name}" ?`)) {
       onDelete(figurine.id);
@@ -125,119 +291,18 @@ export function FigurineTable({
 
       {/* Rows */}
       <div className="divide-y divide-gray-100">
-        {figurines.map(figurine => {
-          const status = presets.statuses.find(s => s.value === figurine.status);
-          const quantity = figurine.quantity || 1;
-          const isSelected = selectedIds.has(figurine.id);
-
-          return (
-            <div
-              key={figurine.id}
-              className={`grid grid-cols-12 gap-3 px-3 py-1.5 items-center hover:bg-gray-50 transition cursor-pointer ${
-                isSelected ? 'bg-primary-50' : ''
-              }`}
-              onClick={(e) => {
-                if (selectionMode && onSelect) {
-                  onSelect(figurine.id, e.shiftKey);
-                } else {
-                  onView(figurine);
-                }
-              }}
-            >
-              {/* Checkbox */}
-              {selectionMode && (
-                <div className="col-span-1" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => {}}
-                    onClick={(e) => {
-                      onSelect?.(figurine.id, e.shiftKey);
-                    }}
-                    className="w-4 h-4 text-primary-500 rounded border-gray-300 focus:ring-primary-500 cursor-pointer"
-                  />
-                </div>
-              )}
-
-              {/* Thumbnail */}
-              <div className={selectionMode ? "col-span-1" : "col-span-1"}>
-                <div className="w-8 h-8 rounded-md bg-gray-100 overflow-hidden flex-shrink-0">
-                  {figurine.image_url ? (
-                    <img
-                      src={figurine.image_url}
-                      alt={figurine.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-300">
-                      <ImageIcon size={14} />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Name */}
-              <div className={`${selectionMode ? "col-span-2" : "col-span-3"} min-w-0`}>
-                <div className="font-medium text-sm text-gray-900 truncate">{figurine.name}</div>
-                <div className="text-xs text-gray-500 truncate md:hidden">
-                  {figurine.brand} • {figurine.category}
-                </div>
-              </div>
-
-              {/* Brand */}
-              <div className="col-span-2 hidden md:block">
-                <span className="text-sm text-gray-600 truncate">{figurine.brand || '—'}</span>
-              </div>
-
-              {/* Category */}
-              <div className="col-span-2 hidden md:block">
-                <span className="text-sm text-gray-600 truncate">
-                  {figurine.category || '—'}
-                  {figurine.species && <span className="text-gray-400"> / {figurine.species}</span>}
-                </span>
-              </div>
-
-              {/* Status */}
-              <div className="col-span-1 hidden md:block">
-                {status && (
-                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium text-white ${status.color}`}>
-                    {status.label}
-                  </span>
-                )}
-              </div>
-
-              {/* Quantity */}
-              <div className="col-span-1 hidden md:block">
-                <span className="text-sm text-gray-600">{quantity}</span>
-              </div>
-
-              {/* Actions */}
-              <div className="col-span-2 flex items-center justify-end gap-0.5">
-                <button
-                  onClick={(e) => { e.stopPropagation(); onView(figurine); }}
-                  className="p-1.5 hover:bg-gray-100 rounded text-gray-500 transition"
-                  title="Voir"
-                >
-                  <Eye size={14} />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onEdit(figurine); }}
-                  className="p-1.5 hover:bg-gray-100 rounded text-gray-500 transition"
-                  title="Modifier"
-                >
-                  <Edit2 size={14} />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleDelete(figurine); }}
-                  className="p-1.5 hover:bg-red-50 rounded text-red-500 transition"
-                  title="Supprimer"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </div>
-          );
-        })}
+        {figurines.map(figurine => (
+          <TableRow
+            key={figurine.id}
+            figurine={figurine}
+            isSelected={selectedIds.has(figurine.id)}
+            selectionMode={selectionMode}
+            onView={onView}
+            onEdit={onEdit}
+            onDelete={handleDelete}
+            onSelect={onSelect}
+          />
+        ))}
       </div>
     </div>
   );

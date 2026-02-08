@@ -18,7 +18,7 @@ interface FigurineGridProps {
 }
 
 // Fields that should show separators when sorting
-const GROUPED_FIELDS: SortField[] = ['category', 'brand', 'game', 'collection', 'group', 'universe', 'species', 'subspecies', 'size', 'alignment', 'habitats', 'status', 'price'];
+const GROUPED_FIELDS: SortField[] = ['category', 'brand', 'game', 'collection', 'group', 'universe', 'species', 'subspecies', 'size', 'alignment', 'material', 'habitats', 'status', 'price'];
 
 export function FigurineGrid({
   figurines,
@@ -50,6 +50,7 @@ export function FigurineGrid({
       case 'subspecies': return fig.subspecies || 'Non défini';
       case 'size': return fig.size || 'Non défini';
       case 'alignment': return fig.alignment || 'Non défini';
+      case 'material': return fig.material || 'Non défini';
       case 'habitats': return fig.habitats?.length > 0 ? fig.habitats[0] : 'Non défini';
       case 'status': {
         const status = presets.statuses.find(s => s.value === fig.status);

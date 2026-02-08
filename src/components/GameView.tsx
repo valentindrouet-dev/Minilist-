@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Package, ChevronDown, ChevronUp, Image as ImageIcon, Edit2, Trash2 } from 'lucide-react';
+import { Package, ChevronDown, ChevronUp, Image as ImageIcon, Edit2, Trash2, Upload, Loader2, Check } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
+import { useImageDrop } from '../hooks/useImageDrop';
 import { getGameMetadata } from '../services/gameMetadata';
 import type { Figurine } from '../types';
 
@@ -13,6 +14,120 @@ interface GameGroup {
   universe: string;
   collection: string;
   totalPrice: number | null;
+}
+
+interface FigurineCardInGameProps {
+  figurine: Figurine;
+  isSelected: boolean;
+  selectionMode: boolean;
+  onView: (figurine: Figurine) => void;
+  onSelect: (id: string, shiftKey?: boolean) => void;
+}
+
+function FigurineCardInGame({
+  figurine,
+  isSelected,
+  selectionMode,
+  onView,
+  onSelect,
+}: FigurineCardInGameProps) {
+  const { presets } = usePresets();
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const status = presets.statuses.find(s => s.value === figurine.status);
+  const quantity = figurine.quantity || 1;
+
+  const { isDragging, isUploading, dragProps } = useImageDrop({
+    figurineId: figurine.id,
+    onSuccess: () => setUploadError(null),
+    onError: (error) => {
+      setUploadError(error);
+      setTimeout(() => setUploadError(null), 3000);
+    },
+  });
+
+  return (
+    <div
+      onClick={(e) => selectionMode ? onSelect(figurine.id, e.shiftKey) : onView(figurine)}
+      className={`bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition group cursor-pointer relative ${
+        isSelected ? 'border-primary-500 ring-2 ring-primary-200' : 'border-gray-200'
+      } ${isDragging ? 'border-primary-500 ring-2 ring-primary-300 scale-105' : ''}`}
+      {...dragProps}
+    >
+      {/* Drag overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 z-20 bg-primary-500/80 flex flex-col items-center justify-center text-white">
+          <Upload size={24} className="mb-1" />
+          <span className="text-xs font-medium">Déposer l'image</span>
+        </div>
+      )}
+
+      {/* Upload loading overlay */}
+      {isUploading && (
+        <div className="absolute inset-0 z-20 bg-white/90 flex flex-col items-center justify-center">
+          <Loader2 size={24} className="animate-spin text-primary-500 mb-1" />
+          <span className="text-xs font-medium text-gray-600">Upload...</span>
+        </div>
+      )}
+
+      {/* Upload error toast */}
+      {uploadError && (
+        <div className="absolute top-1 left-1 right-1 z-30 px-2 py-1 bg-red-500 text-white text-xs rounded-lg">
+          {uploadError}
+        </div>
+      )}
+
+      {/* Selection checkbox */}
+      {selectionMode && (
+        <div
+          className={`absolute top-1 left-1 z-10 w-6 h-6 rounded-full flex items-center justify-center transition
+            ${isSelected ? 'bg-primary-500 text-white' : 'bg-white/80 border border-gray-300'}
+          `}
+        >
+          {isSelected && <Check size={14} strokeWidth={3} />}
+        </div>
+      )}
+
+      {/* Image */}
+      <div className="aspect-square bg-gray-100 relative overflow-hidden">
+        {figurine.image_url ? (
+          <img
+            src={figurine.image_url}
+            alt={figurine.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <ImageIcon className="text-gray-300" size={32} />
+          </div>
+        )}
+
+        {/* Quantity badge */}
+        {quantity > 1 && (
+          <div className="absolute bottom-1 right-1 px-1.5 py-0.5 bg-black/70 text-white rounded-lg text-xs font-bold">
+            x{quantity}
+          </div>
+        )}
+
+        {/* Status badge */}
+        {status && (
+          <div className={`absolute top-1 ${selectionMode ? 'left-8' : 'left-1'} px-2 py-0.5 rounded-lg text-xs font-medium text-white ${status.color}`}>
+            {status.label}
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="p-2">
+        <h3 className="font-medium text-sm text-gray-900 truncate" title={figurine.name}>
+          {figurine.name}
+        </h3>
+        <p className="text-xs text-gray-500 truncate">
+          {figurine.category || figurine.brand || '—'}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 interface GameViewProps {
@@ -39,7 +154,6 @@ export function GameView({
   onDeleteGame,
   metadataVersion,
 }: GameViewProps) {
-  const { presets } = usePresets();
   const [expandedGame, setExpandedGame] = useState<string | null>(null);
 
   // Group figurines by game, excluding those without a game
@@ -284,76 +398,16 @@ export function GameView({
           {/* Figurines grid */}
           <div className="p-4">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {expandedGameData.figurines.map(figurine => {
-                const status = presets.statuses.find(s => s.value === figurine.status);
-                const isSelected = selectedIds.has(figurine.id);
-                const quantity = figurine.quantity || 1;
-
-                return (
-                  <div
-                    key={figurine.id}
-                    onClick={(e) => selectionMode ? onSelect(figurine.id, e.shiftKey) : onView(figurine)}
-                    className={`bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition group cursor-pointer ${
-                      isSelected ? 'border-primary-500 ring-2 ring-primary-200' : 'border-gray-200'
-                    }`}
-                  >
-                    {/* Selection checkbox */}
-                    {selectionMode && (
-                      <div
-                        className={`absolute top-1 left-1 z-10 w-6 h-6 rounded-full flex items-center justify-center transition
-                          ${isSelected ? 'bg-primary-500 text-white' : 'bg-white/80 border border-gray-300'}
-                        `}
-                      >
-                        {isSelected && (
-                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Image */}
-                    <div className="aspect-square bg-gray-100 relative overflow-hidden">
-                      {figurine.image_url ? (
-                        <img
-                          src={figurine.image_url}
-                          alt={figurine.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ImageIcon className="text-gray-300" size={32} />
-                        </div>
-                      )}
-
-                      {/* Quantity badge */}
-                      {quantity > 1 && (
-                        <div className="absolute bottom-1 right-1 px-1.5 py-0.5 bg-black/70 text-white rounded-lg text-xs font-bold">
-                          x{quantity}
-                        </div>
-                      )}
-
-                      {/* Status badge */}
-                      {status && (
-                        <div className={`absolute top-1 left-1 px-2 py-0.5 rounded-lg text-xs font-medium text-white ${status.color}`}>
-                          {status.label}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Info */}
-                    <div className="p-2">
-                      <h3 className="font-medium text-sm text-gray-900 truncate" title={figurine.name}>
-                        {figurine.name}
-                      </h3>
-                      <p className="text-xs text-gray-500 truncate">
-                        {figurine.category || figurine.brand || '—'}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
+              {expandedGameData.figurines.map(figurine => (
+                <FigurineCardInGame
+                  key={figurine.id}
+                  figurine={figurine}
+                  isSelected={selectedIds.has(figurine.id)}
+                  selectionMode={selectionMode}
+                  onView={onView}
+                  onSelect={onSelect}
+                />
+              ))}
             </div>
           </div>
         </div>

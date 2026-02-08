@@ -1,5 +1,7 @@
-import { Edit2, Trash2, Image as ImageIcon, Check } from 'lucide-react';
+import { useState } from 'react';
+import { Edit2, Trash2, Image as ImageIcon, Check, Upload, Loader2 } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
+import { useImageDrop } from '../hooks/useImageDrop';
 import type { Figurine, GridSize, SortField } from '../types';
 
 interface FigurineCardProps {
@@ -26,11 +28,21 @@ export function FigurineCard({
   onSelect,
 }: FigurineCardProps) {
   const { presets } = usePresets();
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const status = presets.statuses.find(s => s.value === figurine.status);
   const quantity = figurine.quantity || 1;
 
   const isCompact = gridSize === 'xs' || gridSize === 'sm';
   const isMedium = gridSize === 'md';
+
+  const { isDragging, isUploading, dragProps } = useImageDrop({
+    figurineId: figurine.id,
+    onSuccess: () => setUploadError(null),
+    onError: (error) => {
+      setUploadError(error);
+      setTimeout(() => setUploadError(null), 3000);
+    },
+  });
 
   // Get secondary text based on sort field
   const getSecondaryText = (): string => {
@@ -88,8 +100,10 @@ export function FigurineCard({
     <div
       className={`bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition group relative cursor-pointer
         ${isSelected ? 'border-primary-500 ring-2 ring-primary-200' : 'border-gray-200'}
+        ${isDragging ? 'border-primary-500 ring-2 ring-primary-300 scale-105' : ''}
       `}
       onClick={handleClick}
+      {...dragProps}
     >
       {/* Selection checkbox */}
       {selectionMode && (
@@ -99,6 +113,29 @@ export function FigurineCard({
           `}
         >
           {isSelected && <Check size={14} strokeWidth={3} />}
+        </div>
+      )}
+
+      {/* Drag and drop overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 z-20 bg-primary-500/80 flex flex-col items-center justify-center text-white">
+          <Upload size={isCompact ? 24 : 32} className="mb-2" />
+          {!isCompact && <span className="text-sm font-medium">Déposer l'image</span>}
+        </div>
+      )}
+
+      {/* Upload loading overlay */}
+      {isUploading && (
+        <div className="absolute inset-0 z-20 bg-white/90 flex flex-col items-center justify-center">
+          <Loader2 size={isCompact ? 24 : 32} className="animate-spin text-primary-500 mb-2" />
+          {!isCompact && <span className="text-sm font-medium text-gray-600">Upload...</span>}
+        </div>
+      )}
+
+      {/* Upload error toast */}
+      {uploadError && (
+        <div className="absolute top-1 left-1 right-1 z-30 px-2 py-1 bg-red-500 text-white text-xs rounded-lg">
+          {uploadError}
         </div>
       )}
 
