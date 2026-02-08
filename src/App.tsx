@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { FigurineProvider, useFigurines } from './context/FigurineContext';
 import { PresetProvider } from './context/PresetContext';
@@ -172,22 +172,44 @@ function CollectionPage() {
   };
 
   // Selection handlers
+  const lastSelectedIdRef = useRef<string | null>(null);
+
   const toggleSelectionMode = () => {
     setSelectionMode(!selectionMode);
     setSelectedIds(new Set());
+    lastSelectedIdRef.current = null;
   };
 
-  const handleSelect = (id: string) => {
+  const handleSelect = useCallback((id: string, shiftKey?: boolean) => {
     setSelectedIds(prev => {
       const newSet = new Set(prev);
+
+      // Shift+Click: select range from last selected to current
+      if (shiftKey && lastSelectedIdRef.current) {
+        const lastIndex = filteredFigurines.findIndex(f => f.id === lastSelectedIdRef.current);
+        const currentIndex = filteredFigurines.findIndex(f => f.id === id);
+
+        if (lastIndex !== -1 && currentIndex !== -1) {
+          const start = Math.min(lastIndex, currentIndex);
+          const end = Math.max(lastIndex, currentIndex);
+
+          for (let i = start; i <= end; i++) {
+            newSet.add(filteredFigurines[i].id);
+          }
+          return newSet;
+        }
+      }
+
+      // Normal click: toggle single item
       if (newSet.has(id)) {
         newSet.delete(id);
       } else {
         newSet.add(id);
+        lastSelectedIdRef.current = id;
       }
       return newSet;
     });
-  };
+  }, [filteredFigurines]);
 
   const selectAll = () => {
     setSelectedIds(new Set(filteredFigurines.map(f => f.id)));
@@ -195,7 +217,24 @@ function CollectionPage() {
 
   const deselectAll = () => {
     setSelectedIds(new Set());
+    lastSelectedIdRef.current = null;
   };
+
+  const selectGroup = useCallback((ids: string[]) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      // Check if all ids are already selected
+      const allSelected = ids.every(id => newSet.has(id));
+      if (allSelected) {
+        // Deselect all in group
+        ids.forEach(id => newSet.delete(id));
+      } else {
+        // Select all in group
+        ids.forEach(id => newSet.add(id));
+      }
+      return newSet;
+    });
+  }, []);
 
   const handleBatchEdit = async (data: BatchEditInput) => {
     await batchUpdateFigurines(Array.from(selectedIds), data);
@@ -337,6 +376,7 @@ function CollectionPage() {
             selectionMode={selectionMode}
             selectedIds={selectedIds}
             onSelect={handleSelect}
+            onSelectGroup={selectGroup}
           />
         )}
         {viewMode === 'table' && (

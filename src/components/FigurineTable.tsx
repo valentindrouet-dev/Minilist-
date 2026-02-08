@@ -10,7 +10,7 @@ interface FigurineTableProps {
   onDelete: (id: string) => void;
   selectionMode?: boolean;
   selectedIds?: Set<string>;
-  onSelect?: (id: string) => void;
+  onSelect?: (id: string, shiftKey?: boolean) => void;
   sort?: SortState;
   onSortChange?: (sort: SortState) => void;
 }
@@ -136,9 +136,9 @@ export function FigurineTable({
               className={`grid grid-cols-12 gap-3 px-3 py-1.5 items-center hover:bg-gray-50 transition cursor-pointer ${
                 isSelected ? 'bg-primary-50' : ''
               }`}
-              onClick={() => {
+              onClick={(e) => {
                 if (selectionMode && onSelect) {
-                  onSelect(figurine.id);
+                  onSelect(figurine.id, e.shiftKey);
                 } else {
                   onView(figurine);
                 }
@@ -146,13 +146,15 @@ export function FigurineTable({
             >
               {/* Checkbox */}
               {selectionMode && (
-                <div className="col-span-1">
+                <div className="col-span-1" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
                     checked={isSelected}
-                    onChange={() => onSelect?.(figurine.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-4 h-4 text-primary-500 rounded border-gray-300 focus:ring-primary-500"
+                    onChange={() => {}}
+                    onClick={(e) => {
+                      onSelect?.(figurine.id, e.shiftKey);
+                    }}
+                    className="w-4 h-4 text-primary-500 rounded border-gray-300 focus:ring-primary-500 cursor-pointer"
                   />
                 </div>
               )}

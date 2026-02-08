@@ -11,7 +11,7 @@ interface FigurineCardProps {
   onDelete: (id: string) => void;
   selectionMode?: boolean;
   isSelected?: boolean;
-  onSelect?: (id: string) => void;
+  onSelect?: (id: string, shiftKey?: boolean) => void;
 }
 
 export function FigurineCard({
@@ -74,9 +74,9 @@ export function FigurineCard({
     }
   };
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
     if (selectionMode && onSelect) {
-      onSelect(figurine.id);
+      onSelect(figurine.id, e.shiftKey);
     } else {
       onView(figurine);
     }

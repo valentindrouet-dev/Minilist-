@@ -1,6 +1,6 @@
 import { GRID_SIZES, type Figurine, type GridSize, type SortField } from '../types';
 import { FigurineCard } from './FigurineCard';
-import { Package } from 'lucide-react';
+import { Package, CheckSquare, Square } from 'lucide-react';
 import { usePresets } from '../context/PresetContext';
 
 interface FigurineGridProps {
@@ -13,7 +13,8 @@ interface FigurineGridProps {
   onDelete: (id: string) => void;
   selectionMode?: boolean;
   selectedIds?: Set<string>;
-  onSelect?: (id: string) => void;
+  onSelect?: (id: string, shiftKey?: boolean) => void;
+  onSelectGroup?: (ids: string[]) => void;
 }
 
 // Fields that should show separators when sorting
@@ -30,6 +31,7 @@ export function FigurineGrid({
   selectionMode = false,
   selectedIds = new Set(),
   onSelect,
+  onSelectGroup,
 }: FigurineGridProps) {
   const { presets } = usePresets();
   const gridCols = GRID_SIZES.find(s => s.value === gridSize)?.cols || GRID_SIZES[2].cols;
@@ -115,11 +117,31 @@ export function FigurineGrid({
 
   return (
     <div className="space-y-6">
-      {groupedFigurines.map(({ group, items }) => (
+      {groupedFigurines.map(({ group, items }) => {
+        const groupIds = items.map(f => f.id);
+        const allSelected = selectionMode && groupIds.length > 0 && groupIds.every(id => selectedIds.has(id));
+        const someSelected = selectionMode && groupIds.some(id => selectedIds.has(id));
+
+        return (
         <div key={group || 'all'}>
           {/* Section header */}
           {showSeparators && group && (
             <div className="flex items-center gap-3 mb-4">
+              {selectionMode && onSelectGroup && (
+                <button
+                  onClick={() => onSelectGroup(groupIds)}
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm transition ${
+                    allSelected
+                      ? 'bg-primary-500 text-white'
+                      : someSelected
+                        ? 'bg-primary-100 text-primary-700'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                  title={allSelected ? 'Désélectionner le groupe' : 'Sélectionner le groupe'}
+                >
+                  {allSelected ? <CheckSquare size={14} /> : <Square size={14} />}
+                </button>
+              )}
               <h3 className="text-lg font-semibold text-gray-800">{group}</h3>
               <span className="text-sm text-gray-500">
                 ({items.reduce((sum, f) => sum + (f.quantity || 1), 0)} figurine{items.reduce((sum, f) => sum + (f.quantity || 1), 0) !== 1 ? 's' : ''})
@@ -145,7 +167,8 @@ export function FigurineGrid({
             ))}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

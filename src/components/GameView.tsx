@@ -22,7 +22,7 @@ interface GameViewProps {
   onEdit?: (figurine: Figurine) => void;
   selectionMode: boolean;
   selectedIds: Set<string>;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, shiftKey?: boolean) => void;
   onEditGame?: (game: GameGroup) => void;
   onDeleteGame?: (figurineIds: string[]) => void;
   metadataVersion?: number;
@@ -292,7 +292,7 @@ export function GameView({
                 return (
                   <div
                     key={figurine.id}
-                    onClick={() => selectionMode ? onSelect(figurine.id) : onView(figurine)}
+                    onClick={(e) => selectionMode ? onSelect(figurine.id, e.shiftKey) : onView(figurine)}
                     className={`bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition group cursor-pointer ${
                       isSelected ? 'border-primary-500 ring-2 ring-primary-200' : 'border-gray-200'
                     }`}

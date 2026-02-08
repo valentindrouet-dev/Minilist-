@@ -4,7 +4,7 @@ import { usePresets } from '../context/PresetContext';
 import type { BatchEditInput, Figurine } from '../types';
 import { getSubspeciesForSpecies } from '../types';
 
-type QuickAddField = 'category' | 'brand' | 'universe' | 'species' | 'subspecies' | 'size' | 'alignment' | 'habitat' | null;
+type QuickAddField = 'category' | 'brand' | 'universe' | 'species' | 'subspecies' | 'size' | 'alignment' | 'material' | 'habitat' | null;
 
 // Quick add modal component
 interface QuickAddModalProps {
@@ -80,7 +80,7 @@ function getCommonValue<T>(figurines: Figurine[], getter: (f: Figurine) => T): T
 }
 
 export function BatchEditModal({ selectedCount, selectedFigurines, onSubmit, onClose }: BatchEditModalProps) {
-  const { presets, addCategory, addBrand, addUniverse, addSpecies, addSubspecies, addSize, addAlignment, addHabitat } = usePresets();
+  const { presets, addCategory, addBrand, addUniverse, addSpecies, addSubspecies, addSize, addAlignment, addMaterial, addHabitat } = usePresets();
   const [submitting, setSubmitting] = useState(false);
   const [quickAddField, setQuickAddField] = useState<QuickAddField>(null);
 
@@ -96,6 +96,7 @@ export function BatchEditModal({ selectedCount, selectedFigurines, onSubmit, onC
     subspecies: getCommonValue(selectedFigurines, f => f.subspecies) || undefined,
     size: getCommonValue(selectedFigurines, f => f.size) || undefined,
     alignment: getCommonValue(selectedFigurines, f => f.alignment) || undefined,
+    material: getCommonValue(selectedFigurines, f => f.material) || undefined,
     status: getCommonValue(selectedFigurines, f => f.status) || undefined,
     price: getCommonValue(selectedFigurines, f => f.price),
   }), [selectedFigurines]);
@@ -111,6 +112,7 @@ export function BatchEditModal({ selectedCount, selectedFigurines, onSubmit, onC
     subspecies: undefined,
     size: undefined,
     alignment: undefined,
+    material: undefined,
     habitats: undefined,
     status: undefined,
     price: undefined,
@@ -156,6 +158,10 @@ export function BatchEditModal({ selectedCount, selectedFigurines, onSubmit, onC
         addAlignment(value);
         setForm(prev => ({ ...prev, alignment: value }));
         break;
+      case 'material':
+        addMaterial(value);
+        setForm(prev => ({ ...prev, material: value }));
+        break;
       case 'habitat':
         addHabitat(value);
         const current = form.habitats || [];
@@ -173,6 +179,7 @@ export function BatchEditModal({ selectedCount, selectedFigurines, onSubmit, onC
       case 'subspecies': return `Ajouter une sous-espèce (${form.species})`;
       case 'size': return 'Ajouter une taille';
       case 'alignment': return 'Ajouter un alignement';
+      case 'material': return 'Ajouter une matière';
       case 'habitat': return 'Ajouter un habitat';
       default: return '';
     }
@@ -456,6 +463,34 @@ export function BatchEditModal({ selectedCount, selectedFigurines, onSubmit, onC
                 onClick={() => setQuickAddField('alignment')}
                 className="p-2 text-gray-500 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition"
                 title="Ajouter un alignement"
+              >
+                <PlusCircle size={20} />
+              </button>
+            </div>
+          </div>
+
+          {/* Matière */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Matière
+              {commonValues.material && <span className="text-xs text-primary-500 ml-2">(commun: {commonValues.material})</span>}
+            </label>
+            <div className="flex gap-1">
+              <select
+                value={form.material || ''}
+                onChange={(e) => setForm(prev => ({ ...prev, material: e.target.value || undefined }))}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              >
+                <option value="">{commonValues.material ? `— Garder: ${commonValues.material} —` : '— Ne pas modifier —'}</option>
+                {presets.materials.map(material => (
+                  <option key={material} value={material}>{material}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setQuickAddField('material')}
+                className="p-2 text-gray-500 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition"
+                title="Ajouter une matière"
               >
                 <PlusCircle size={20} />
               </button>
