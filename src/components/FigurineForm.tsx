@@ -74,10 +74,10 @@ interface FigurineFormProps {
   hasNext?: boolean;
 }
 
-type QuickAddField = 'category' | 'brand' | 'universe' | 'species' | 'subspecies' | 'size' | 'alignment' | 'habitat' | null;
+type QuickAddField = 'category' | 'brand' | 'universe' | 'species' | 'subspecies' | 'size' | 'alignment' | 'material' | 'habitat' | null;
 
 export function FigurineForm({ figurine, onSubmit, onClose, existingTags, onPrevious, onNext, hasPrevious = false, hasNext = false }: FigurineFormProps) {
-  const { presets, addCategory, addBrand, addUniverse, addSpecies, addSubspecies, addSize, addAlignment, addHabitat } = usePresets();
+  const { presets, addCategory, addBrand, addUniverse, addSpecies, addSubspecies, addSize, addAlignment, addMaterial, addHabitat } = usePresets();
   const [quickAddField, setQuickAddField] = useState<QuickAddField>(null);
 
   const emptyForm: FigurineInput = {
@@ -92,6 +92,7 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags, onPrev
     subspecies: '',
     size: 'Normal',
     alignment: '',
+    material: '',
     group: '',
     habitats: [],
     status: presets.statuses[0]?.value || 'unpainted',
@@ -116,6 +117,7 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags, onPrev
     subspecies: figurine.subspecies || '',
     size: figurine.size || 'Normal',
     alignment: figurine.alignment || '',
+    material: figurine.material || '',
     group: figurine.group || '',
     habitats: figurine.habitats || [],
     status: figurine.status,
@@ -143,6 +145,7 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags, onPrev
         subspecies: figurine.subspecies || '',
         size: figurine.size || 'Normal',
         alignment: figurine.alignment || '',
+        material: figurine.material || '',
         group: figurine.group || '',
         habitats: figurine.habitats || [],
         status: figurine.status,
@@ -204,6 +207,10 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags, onPrev
         addAlignment(value);
         setForm(prev => ({ ...prev, alignment: value }));
         break;
+      case 'material':
+        addMaterial(value);
+        setForm(prev => ({ ...prev, material: value }));
+        break;
       case 'habitat':
         addHabitat(value);
         setForm(prev => ({ ...prev, habitats: [...prev.habitats, value] }));
@@ -220,6 +227,7 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags, onPrev
       case 'subspecies': return `Ajouter une sous-espèce (${form.species})`;
       case 'size': return 'Ajouter une taille';
       case 'alignment': return 'Ajouter un alignement';
+      case 'material': return 'Ajouter une matière';
       case 'habitat': return 'Ajouter un habitat';
       default: return '';
     }
@@ -736,6 +744,31 @@ export function FigurineForm({ figurine, onSubmit, onClose, existingTags, onPrev
                   <PlusCircle size={20} />
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* Matière */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Matière</label>
+            <div className="flex gap-1">
+              <select
+                value={form.material}
+                onChange={(e) => setForm(prev => ({ ...prev, material: e.target.value }))}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              >
+                <option value="">Sélectionner</option>
+                {presets.materials.map(material => (
+                  <option key={material} value={material}>{material}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setQuickAddField('material')}
+                className="p-2 text-gray-500 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition"
+                title="Ajouter une matière"
+              >
+                <PlusCircle size={20} />
+              </button>
             </div>
           </div>
 

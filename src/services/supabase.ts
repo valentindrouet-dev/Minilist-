@@ -44,6 +44,7 @@ const fromDatabase = (row: Record<string, unknown>): Figurine => ({
   subspecies: row.subspecies as string || '',
   size: row.size as string || 'Normal',
   alignment: row.alignment as string || '',
+  material: row.material as string || '',
   group: row.group as string || '',
   habitats: row.habitats as string[] || [],
   status: row.status as string || 'unpainted',

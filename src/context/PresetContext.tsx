@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import type { Presets, StatusPreset, SubspeciesBySpecies } from '../types';
 import { DEFAULT_PRESETS, getAllSubspecies } from '../types';
 
-type PresetField = 'categories' | 'brands' | 'universes' | 'species' | 'sizes' | 'alignments' | 'habitats';
+type PresetField = 'categories' | 'brands' | 'universes' | 'species' | 'sizes' | 'alignments' | 'materials' | 'habitats';
 
 interface PresetContextType {
   presets: Presets;
@@ -22,6 +22,8 @@ interface PresetContextType {
   removeSize: (size: string) => void;
   addAlignment: (alignment: string) => void;
   removeAlignment: (alignment: string) => void;
+  addMaterial: (material: string) => void;
+  removeMaterial: (material: string) => void;
   addHabitat: (habitat: string) => void;
   removeHabitat: (habitat: string) => void;
   addStatus: (status: StatusPreset) => void;
@@ -168,6 +170,16 @@ export function PresetProvider({ children }: { children: ReactNode }) {
     setPresets(prev => ({ ...prev, alignments: prev.alignments.filter(a => a !== alignment) }));
   };
 
+  const addMaterial = (material: string) => {
+    if (!presets.materials.includes(material)) {
+      setPresets(prev => ({ ...prev, materials: [...prev.materials, material] }));
+    }
+  };
+
+  const removeMaterial = (material: string) => {
+    setPresets(prev => ({ ...prev, materials: prev.materials.filter(m => m !== material) }));
+  };
+
   const addHabitat = (habitat: string) => {
     if (!presets.habitats.includes(habitat)) {
       setPresets(prev => ({ ...prev, habitats: sortAlpha([...prev.habitats, habitat]) }));
@@ -275,6 +287,8 @@ export function PresetProvider({ children }: { children: ReactNode }) {
         removeSize,
         addAlignment,
         removeAlignment,
+        addMaterial,
+        removeMaterial,
         addHabitat,
         removeHabitat,
         addStatus,

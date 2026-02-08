@@ -3,7 +3,7 @@ import { useFigurines } from '../context/FigurineContext';
 import { usePresets } from '../context/PresetContext';
 import {
   PieChart, BarChart3, Tag, Palette, Users, Globe, Gamepad2, Folder, Trees, Coins, Shield, Swords,
-  ChevronDown, ChevronUp, SortAsc, SortDesc, Package, Ruler, Calendar,
+  ChevronDown, ChevronUp, SortAsc, SortDesc, Package, Ruler, Calendar, Layers,
   Box, Percent, Hash
 } from 'lucide-react';
 
@@ -413,6 +413,17 @@ export function StatsPage() {
       .reduce((sum, f) => sum + (f.quantity || 1), 0),
   })).sort((a, b) => sizeOrder.indexOf(a.name) - sizeOrder.indexOf(b.name));
 
+  // Sum quantities for each material
+  const allMaterials = [...new Set(figurines.map(f => f.material).filter(Boolean))];
+  const materialCounts: StatItem[] = allMaterials.map(material => {
+    const matFigurines = figurines.filter(f => f.material === material);
+    return {
+      name: material,
+      count: matFigurines.reduce((sum, f) => sum + (f.quantity || 1), 0),
+      value: matFigurines.reduce((sum, f) => f.price != null ? sum + f.price * (f.quantity || 1) : sum, 0),
+    };
+  }).sort((a, b) => b.count - a.count);
+
   // Calculate total price value
   const totalValue = figurines.reduce((sum, f) => {
     if (f.price != null) {
@@ -436,6 +447,7 @@ export function StatsPage() {
   const maxAlignmentCount = Math.max(...alignmentCounts.map(a => a.count), 1);
   const maxGroupCount = Math.max(...groupCounts.map(g => g.count), 1);
   const maxSizeCount = Math.max(...sizeCounts.map(s => s.count), 1);
+  const maxMaterialCount = Math.max(...materialCounts.map(m => m.count), 1);
   const maxTagCount = Math.max(...tagCounts.map(t => t.count), 1);
 
   // Get painted count for progress (sum of quantities)
@@ -701,6 +713,17 @@ export function StatsPage() {
         maxCount={maxSizeCount}
         color="bg-teal-500"
       />
+
+      {materialCounts.length > 0 && (
+        <CollapsibleStatSection
+          title="Par matière"
+          icon={<Layers size={20} className="text-lime-500" />}
+          items={materialCounts}
+          maxCount={maxMaterialCount}
+          color="bg-lime-500"
+          showValue={true}
+        />
+      )}
 
       <CollapsibleStatSection
         title="Par habitat"

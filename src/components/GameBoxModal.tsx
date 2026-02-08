@@ -124,6 +124,7 @@ export function GameBoxModal({ onSubmit, onClose }: GameBoxModalProps) {
         subspecies: '',
         size: 'Normal',
         alignment: '',
+        material: '',
         group: '',
         habitats: [],
         status: 'unpainted', // Default status for new figurines

@@ -17,6 +17,7 @@ export interface Figurine {
   size: string;
   alignment: string;
   group: string;
+  material: string;
   habitats: string[];
   status: string; // Main/default status
   statusBreakdown: StatusCount[]; // Detailed status breakdown for groups
@@ -42,6 +43,7 @@ export interface BatchEditInput {
   subspecies?: string;
   size?: string;
   alignment?: string;
+  material?: string;
   habitats?: string[];
   status?: string;
   price?: number | null;
@@ -64,7 +66,7 @@ export interface FilterState {
   onlyOwnImages: boolean;
 }
 
-export type SortField = 'name' | 'category' | 'brand' | 'game' | 'collection' | 'universe' | 'species' | 'subspecies' | 'size' | 'alignment' | 'group' | 'habitats' | 'status' | 'price' | 'created_at' | 'updated_at';
+export type SortField = 'name' | 'category' | 'brand' | 'game' | 'collection' | 'universe' | 'species' | 'subspecies' | 'size' | 'alignment' | 'material' | 'group' | 'habitats' | 'status' | 'price' | 'created_at' | 'updated_at';
 export type SortOrder = 'asc' | 'desc';
 
 export interface SortState {
@@ -89,6 +91,7 @@ export interface Presets {
   subspeciesBySpecies: SubspeciesBySpecies;
   sizes: string[];
   alignments: string[];
+  materials: string[];
   habitats: string[];
   statuses: StatusPreset[];
 }
@@ -170,6 +173,12 @@ export const DEFAULT_PRESETS: Presets = {
     'Neutre Mauvais',
     'Chaotique Mauvais',
   ],
+  materials: [
+    'Plastique',
+    '3D Print',
+    'Métal',
+    'Résine',
+  ],
   habitats: sortAlpha([
     'Aquatique',
     'Désert',
@@ -203,6 +212,7 @@ export const SORT_OPTIONS: { value: SortField; label: string }[] = [
   { value: 'subspecies', label: 'Sous-Espèce' },
   { value: 'size', label: 'Taille' },
   { value: 'alignment', label: 'Alignement' },
+  { value: 'material', label: 'Matière' },
   { value: 'habitats', label: 'Habitat' },
   { value: 'status', label: 'Statut' },
   { value: 'price', label: 'Prix' },

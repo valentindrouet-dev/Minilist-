@@ -114,6 +114,7 @@ export function MultiAddModal({ onSubmit, onClose }: MultiAddModalProps) {
         subspecies: '',
         size: 'Normal',
         alignment: '',
+        material: '',
         habitats: [],
         status: 'unpainted',
         statusBreakdown: [],

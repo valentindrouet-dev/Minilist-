@@ -16,6 +16,7 @@ const CSV_HEADERS = [
   'subspecies',
   'size',
   'alignment',
+  'material',
   'habitats',
   'status',
   'status_breakdown',
@@ -27,10 +28,10 @@ const CSV_HEADERS = [
   'is_own_image',
 ] as const;
 
-const CSV_TEMPLATE_CONTENT = `name;original_name;category;brand;game;collection;group;universe;species;subspecies;size;alignment;habitats;status;status_breakdown;price;quantity;tags;notes;image_url;is_own_image
-Space Marine Intercessor;Space Marine Intercessor;Figurines;Games Workshop;Warhammer 40K;Kill Team;Ultramarines;Warhammer 40K;Humain;;Normal;Loyal Bon;;painted;;35.00;5;space marine,ultramarines,sci-fi;Peint en bleu Ultramarine;;true
-Goblin Archer;Goblin Archer;Figurines;Reaper Miniatures;;Pathfinder Battles;;D&D / Pathfinder;Hybride;Gobelin;Petit;Chaotique Mauvais;Forêt;unpainted;unpainted:7|primed:3;4.50;10;gobelin,archer,fantasy;;;false
-Dragon Rouge;;Impression 3D;;;;;Fantasy;Dragon;;Gigantesque;Chaotique Neutre;Montagne,Grotte;wip;;1;1;dragon,boss,epic;En cours de peinture - base rouge faite;;false
+const CSV_TEMPLATE_CONTENT = `name;original_name;category;brand;game;collection;group;universe;species;subspecies;size;alignment;material;habitats;status;status_breakdown;price;quantity;tags;notes;image_url;is_own_image
+Space Marine Intercessor;Space Marine Intercessor;Figurines;Games Workshop;Warhammer 40K;Kill Team;Ultramarines;Warhammer 40K;Humain;;Normal;Loyal Bon;Plastique;;painted;;35.00;5;space marine,ultramarines,sci-fi;Peint en bleu Ultramarine;;true
+Goblin Archer;Goblin Archer;Figurines;Reaper Miniatures;;Pathfinder Battles;;D&D / Pathfinder;Hybride;Gobelin;Petit;Chaotique Mauvais;Métal;Forêt;unpainted;unpainted:7|primed:3;4.50;10;gobelin,archer,fantasy;;;false
+Dragon Rouge;;Impression 3D;;;;;Fantasy;Dragon;;Gigantesque;Chaotique Neutre;3D Print;Montagne,Grotte;wip;;1;1;dragon,boss,epic;En cours de peinture - base rouge faite;;false
 `;
 
 function escapeCSVField(field: string): string {
@@ -107,6 +108,7 @@ export function exportToCSV(figurines: Figurine[]): string {
       escapeCSVField(fig.subspecies || ''),
       escapeCSVField(fig.size || 'Normal'),
       escapeCSVField(fig.alignment || ''),
+      escapeCSVField(fig.material || ''),
       escapeCSVField((fig.habitats || []).join(',')), // Virgules pour les habitats
       escapeCSVField(fig.status || ''),
       escapeCSVField(statusBreakdownStr),
@@ -196,6 +198,7 @@ export function parseCSV(csvContent: string): FigurineInput[] {
       subspecies: row['subspecies'] || '',
       size: row['size'] || 'Normal',
       alignment: row['alignment'] || '',
+      material: row['material'] || '',
       habitats,
       status: row['status'] || 'unpainted',
       statusBreakdown,
