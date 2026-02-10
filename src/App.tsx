@@ -5,7 +5,7 @@ import { PresetProvider } from './context/PresetContext';
 import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineTable, FigurineForm, FigurineDetailModal, StatsPage, ViewControls, PresetManager, ImportExportModal, BatchEditModal, MultiAddModal, GameBoxModal, GameView, GameEditModal, ImageMigrationModal } from './components';
 import type { Figurine, FigurineInput, BatchEditInput, ViewMode } from './types';
 import { isSupabaseConfigured } from './services/supabase';
-import { CheckSquare, Edit3 } from 'lucide-react';
+import { CheckSquare, Edit3, Trash2 } from 'lucide-react';
 
 const VIEW_MODE_KEY = 'minilist_view_mode';
 
@@ -331,13 +331,31 @@ function CollectionPage() {
                 )}
               </div>
               {selectedIds.size > 0 && (
-                <button
-                  onClick={() => setShowBatchEdit(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition"
-                >
-                  <Edit3 size={16} />
-                  Modifier la sélection
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowBatchEdit(true)}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition"
+                  >
+                    <Edit3 size={16} />
+                    Modifier
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const count = selectedIds.size;
+                      if (window.confirm(`Supprimer ${count} figurine${count > 1 ? 's' : ''} ?`)) {
+                        for (const id of selectedIds) {
+                          await deleteFigurine(id);
+                        }
+                        setSelectedIds(new Set());
+                        setSelectionMode(false);
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition"
+                  >
+                    <Trash2 size={16} />
+                    Supprimer
+                  </button>
+                </div>
               )}
             </div>
           )}

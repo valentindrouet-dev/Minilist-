@@ -174,6 +174,13 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
         return sort.order === 'asc' ? aVal - bVal : bVal - aVal;
       }
 
+      // Put empty/undefined values last (regardless of sort order)
+      const aEmpty = aVal === '' || aVal === null || aVal === undefined;
+      const bEmpty = bVal === '' || bVal === null || bVal === undefined;
+      if (aEmpty && !bEmpty) return 1;  // a goes after b
+      if (!aEmpty && bEmpty) return -1; // a goes before b
+      if (aEmpty && bEmpty) return 0;   // both empty, keep order
+
       const comparison = aVal.toString().localeCompare(bVal.toString(), 'fr', { numeric: true });
       return sort.order === 'asc' ? comparison : -comparison;
     });

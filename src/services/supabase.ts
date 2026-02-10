@@ -85,6 +85,7 @@ const toDatabase = (figurine: Partial<FigurineInput> & { id?: string; created_at
   if (figurine.subspecies !== undefined) result.subspecies = figurine.subspecies;
   if (figurine.size !== undefined) result.size = figurine.size;
   if (figurine.alignment !== undefined) result.alignment = figurine.alignment;
+  if (figurine.material !== undefined) result.material = figurine.material;
   if (figurine.group !== undefined) result.group = figurine.group;
   if (figurine.habitats !== undefined) result.habitats = figurine.habitats;
   if (figurine.status !== undefined) result.status = figurine.status;
