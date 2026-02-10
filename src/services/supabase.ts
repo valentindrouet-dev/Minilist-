@@ -21,6 +21,16 @@ export const getSupabase = () => {
 // Local storage fallback for when Supabase is not configured
 const LOCAL_STORAGE_KEY = 'minilist_figurines';
 
+// Helper to convert file to base64
+const convertToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
 const getLocalFigurines = (): Figurine[] => {
   const data = localStorage.getItem(LOCAL_STORAGE_KEY);
   return data ? JSON.parse(data) : [];
@@ -262,30 +272,35 @@ export const figurineService = {
     const client = getSupabase();
 
     if (client) {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${uuidv4()}.${fileExt}`;
-      const filePath = `figurines/${fileName}`;
+      try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${uuidv4()}.${fileExt}`;
+        const filePath = `figurines/${fileName}`;
 
-      const { error } = await client.storage
-        .from('images')
-        .upload(filePath, file);
+        const { error } = await client.storage
+          .from('images')
+          .upload(filePath, file);
 
-      if (error) throw error;
+        if (error) {
+          // If bucket not found or storage error, fallback to base64
+          console.warn('Supabase storage error, falling back to base64:', error.message);
+          return convertToBase64(file);
+        }
 
-      const { data } = client.storage
-        .from('images')
-        .getPublicUrl(filePath);
+        const { data } = client.storage
+          .from('images')
+          .getPublicUrl(filePath);
 
-      return data.publicUrl;
+        return data.publicUrl;
+      } catch (err) {
+        // On any error, fallback to base64
+        console.warn('Storage error, falling back to base64:', err);
+        return convertToBase64(file);
+      }
     }
 
     // Local fallback: convert to base64
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+    return convertToBase64(file);
   },
 
   async search(query: string): Promise<Figurine[]> {

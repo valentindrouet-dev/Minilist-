@@ -105,6 +105,7 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
           subspecies: f.subspecies || '',
           size: f.size || 'Normal',
           alignment: f.alignment || '',
+          material: f.material || '',
           group: f.group || '',
           habitats,
           price: f.price ?? null,
