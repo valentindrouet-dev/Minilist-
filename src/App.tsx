@@ -5,7 +5,7 @@ import { PresetProvider } from './context/PresetContext';
 import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineTable, FigurineForm, FigurineDetailModal, StatsPage, ViewControls, PresetManager, ImportExportModal, BatchEditModal, MultiAddModal, GameBoxModal, GameView, GameEditModal, ImageMigrationModal } from './components';
 import type { Figurine, FigurineInput, BatchEditInput, ViewMode } from './types';
 import { isSupabaseConfigured } from './services/supabase';
-import { CheckSquare, Edit3, Trash2 } from 'lucide-react';
+import { CheckSquare, Edit3, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 
 const VIEW_MODE_KEY = 'minilist_view_mode';
 
@@ -55,6 +55,7 @@ function CollectionPage() {
   const [showImportExport, setShowImportExport] = useState(false);
   const [showImageMigration, setShowImageMigration] = useState(false);
   const [showBatchEdit, setShowBatchEdit] = useState(false);
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [editingFigurine, setEditingFigurine] = useState<Figurine | null>(null);
   const [viewingFigurine, setViewingFigurine] = useState<Figurine | null>(null);
   const [editingGame, setEditingGame] = useState<{ game: string; brand: string; universe: string; collection: string; price: number | null; coverImage: string | null; figurineIds: string[] } | null>(null);
@@ -259,27 +260,40 @@ function CollectionPage() {
         />
 
         <div className="max-w-7xl mx-auto px-4 pt-4 pb-3 space-y-3">
-          {/* Search & Filters */}
-          <SearchBar
-            value={filters.search}
-            onChange={(search) => setFilters(prev => ({ ...prev, search }))}
-            placeholder="Rechercher par nom, marque, catégorie, univers, tag..."
-          />
-          <FilterPanel
-            filters={filters}
-            onChange={setFilters}
-            brands={allBrands}
-            categories={allCategories}
-            universes={allUniverses}
-            species={allSpecies}
-            subspecies={allSubspecies}
-            habitats={allHabitats}
-            tags={allTags}
-          />
+          {/* Collapsible Search & Filters */}
+          {!headerCollapsed && (
+            <>
+              <SearchBar
+                value={filters.search}
+                onChange={(search) => setFilters(prev => ({ ...prev, search }))}
+                placeholder="Rechercher par nom, marque, catégorie, univers, tag..."
+              />
+              <FilterPanel
+                filters={filters}
+                onChange={setFilters}
+                brands={allBrands}
+                categories={allCategories}
+                universes={allUniverses}
+                species={allSpecies}
+                subspecies={allSubspecies}
+                habitats={allHabitats}
+                tags={allTags}
+              />
+            </>
+          )}
 
           {/* View controls & Results count */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
+              {/* Toggle header collapse button */}
+              <button
+                onClick={() => setHeaderCollapsed(!headerCollapsed)}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
+                title={headerCollapsed ? 'Afficher recherche et filtres' : 'Masquer recherche et filtres'}
+              >
+                {headerCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                <span className="hidden sm:inline">{headerCollapsed ? 'Filtres' : 'Masquer'}</span>
+              </button>
               <div className="text-sm text-gray-500">
                 {totalFigurines} figurine{totalFigurines !== 1 ? 's' : ''}
                 {filteredFigurines.length !== totalFigurines && ` (${filteredFigurines.length} entrées)`}
@@ -364,13 +378,17 @@ function CollectionPage() {
         <div className="h-px bg-gray-200 shadow-sm" />
       </div>
 
-      {/* Spacer to push content below fixed header - height depends on selection mode and active filters */}
+      {/* Spacer to push content below fixed header - height depends on selection mode, active filters, and collapsed state */}
       <div className={
-        selectionMode
-          ? 'h-[400px] sm:h-[360px]'
-          : activeFiltersCount > 0
-            ? 'h-[390px] sm:h-[340px]'
-            : 'h-[340px] sm:h-[300px]'
+        headerCollapsed
+          ? selectionMode
+            ? 'h-[220px] sm:h-[200px]'
+            : 'h-[160px] sm:h-[140px]'
+          : selectionMode
+            ? 'h-[400px] sm:h-[360px]'
+            : activeFiltersCount > 0
+              ? 'h-[390px] sm:h-[340px]'
+              : 'h-[340px] sm:h-[300px]'
       } />
 
       <main className="max-w-7xl mx-auto px-4 pb-6">
