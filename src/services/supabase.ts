@@ -13,10 +13,52 @@ export const isSupabaseConfigured = () => {
 
 export const getSupabase = () => {
   if (!supabase && isSupabaseConfigured()) {
-    supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      db: {
+        schema: 'public',
+      },
+      global: {
+        headers: {
+          'x-my-custom-header': 'minilist',
+        },
+      },
+    });
   }
   return supabase;
 };
+
+// Helper function to retry a query with exponential backoff
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  initialDelay: number = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      // Check if it's a timeout error
+      const isTimeout = lastError.message.includes('timeout') ||
+                        lastError.message.includes('canceling statement');
+
+      // Only retry on timeout errors
+      if (!isTimeout || attempt === maxRetries - 1) {
+        throw lastError;
+      }
+
+      // Wait before retrying with exponential backoff
+      const delay = initialDelay * Math.pow(2, attempt);
+      console.log(`Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError;
+}
 
 // Local storage fallback for when Supabase is not configured
 const LOCAL_STORAGE_KEY = 'minilist_figurines';
@@ -107,13 +149,36 @@ export const figurineService = {
     const client = getSupabase();
 
     if (client) {
-      const { data, error } = await client
-        .from('figurines')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Use retry with backoff for timeout resilience
+      return retryWithBackoff(async () => {
+        // Load in batches to avoid timeout on large collections
+        const BATCH_SIZE = 1000;
+        let allData: Figurine[] = [];
+        let offset = 0;
+        let hasMore = true;
 
-      if (error) throw new Error(error.message || 'Erreur Supabase');
-      return (data || []).map(fromDatabase);
+        while (hasMore) {
+          const { data, error } = await client
+            .from('figurines')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .range(offset, offset + BATCH_SIZE - 1);
+
+          if (error) throw new Error(error.message || 'Erreur Supabase');
+
+          const batch = (data || []).map(fromDatabase);
+          allData = allData.concat(batch);
+
+          // If we got fewer items than the batch size, we're done
+          if (batch.length < BATCH_SIZE) {
+            hasMore = false;
+          } else {
+            offset += BATCH_SIZE;
+          }
+        }
+
+        return allData;
+      }, 3, 2000);
     }
 
     return getLocalFigurines();
@@ -411,5 +476,28 @@ export const figurineService = {
   // Clear localStorage data (after successful migration)
   clearLocalData(): void {
     localStorage.removeItem(LOCAL_STORAGE_KEY);
+  },
+
+  // Test connection to Supabase with a simple count query
+  async testConnection(): Promise<{ ok: boolean; count: number; error?: string }> {
+    const client = getSupabase();
+
+    if (!client) {
+      return { ok: true, count: 0, error: 'Mode local' };
+    }
+
+    try {
+      const { count, error } = await client
+        .from('figurines')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) {
+        return { ok: false, count: 0, error: error.message };
+      }
+
+      return { ok: true, count: count || 0 };
+    } catch (err) {
+      return { ok: false, count: 0, error: err instanceof Error ? err.message : 'Erreur inconnue' };
+    }
   }
 };

@@ -24,6 +24,7 @@ function CollectionPage() {
     updateFigurine,
     batchUpdateFigurines,
     deleteFigurine,
+    refreshFigurines,
     allBrands,
     allCategories,
     allUniverses,
@@ -394,8 +395,14 @@ function CollectionPage() {
       <main className="max-w-7xl mx-auto px-4 pb-6">
         {/* Error */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
-            {error}
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between gap-4">
+            <span className="text-red-700">{error}</span>
+            <button
+              onClick={() => refreshFigurines()}
+              className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium transition flex-shrink-0"
+            >
+              Réessayer
+            </button>
           </div>
         )}
 

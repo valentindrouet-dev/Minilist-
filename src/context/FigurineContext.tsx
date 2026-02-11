@@ -82,6 +82,19 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
+
+      // First, test the connection with a simple count query
+      const testResult = await figurineService.testConnection();
+      if (!testResult.ok) {
+        // If timeout, provide a helpful message
+        if (testResult.error?.includes('timeout') || testResult.error?.includes('canceling statement')) {
+          throw new Error('La base de données met trop de temps à répondre. Veuillez réessayer dans quelques instants ou vérifier votre connexion internet.');
+        }
+        throw new Error(testResult.error || 'Erreur de connexion');
+      }
+
+      console.log(`Chargement de ${testResult.count} figurines...`);
+
       const data = await figurineService.getAll();
       // Ensure new fields have default values for old data + migration
       const normalizedData = data.map(f => {
@@ -116,7 +129,13 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
       });
       setFigurines(normalizedData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors du chargement');
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors du chargement';
+      // Provide helpful message for timeout errors
+      if (errorMessage.includes('timeout') || errorMessage.includes('canceling statement')) {
+        setError('Connexion lente à la base de données. Cliquez sur "Réessayer" pour recharger.');
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
