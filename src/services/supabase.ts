@@ -112,7 +112,7 @@ export const figurineService = {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message || 'Erreur Supabase');
       return (data || []).map(fromDatabase);
     }
 
@@ -129,7 +129,7 @@ export const figurineService = {
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (error) throw new Error(error.message || 'Erreur Supabase');
       return data ? fromDatabase(data) : null;
     }
 
@@ -149,17 +149,27 @@ export const figurineService = {
     };
 
     if (client) {
-      const dbData = toDatabase(figurine);
-      const { data, error } = await client
-        .from('figurines')
-        .insert(dbData)
-        .select()
-        .single();
+      try {
+        const dbData = toDatabase(figurine);
+        const { data, error } = await client
+          .from('figurines')
+          .insert(dbData)
+          .select()
+          .single();
 
-      if (error) throw error;
-      return fromDatabase(data);
+        if (error) {
+          console.warn('Supabase create error, falling back to localStorage:', error.message);
+          // Fallback to localStorage
+        } else {
+          return fromDatabase(data);
+        }
+      } catch (err) {
+        console.warn('Supabase create failed, falling back to localStorage:', err);
+        // Fallback to localStorage
+      }
     }
 
+    // localStorage fallback
     const figurines = getLocalFigurines();
     figurines.unshift(figurine);
     try {
@@ -178,18 +188,28 @@ export const figurineService = {
     const now = new Date().toISOString();
 
     if (client) {
-      const dbData = toDatabase({ ...input, updated_at: now });
-      const { data, error } = await client
-        .from('figurines')
-        .update(dbData)
-        .eq('id', id)
-        .select()
-        .single();
+      try {
+        const dbData = toDatabase({ ...input, updated_at: now });
+        const { data, error } = await client
+          .from('figurines')
+          .update(dbData)
+          .eq('id', id)
+          .select()
+          .single();
 
-      if (error) throw error;
-      return fromDatabase(data);
+        if (error) {
+          console.warn('Supabase update error, falling back to localStorage:', error.message);
+          // Fallback to localStorage
+        } else {
+          return fromDatabase(data);
+        }
+      } catch (err) {
+        console.warn('Supabase update failed, falling back to localStorage:', err);
+        // Fallback to localStorage
+      }
     }
 
+    // localStorage fallback
     const figurines = getLocalFigurines();
     const index = figurines.findIndex(f => f.id === id);
     if (index === -1) throw new Error('Figurine not found');
@@ -221,7 +241,7 @@ export const figurineService = {
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) throw new Error(error.message || 'Erreur Supabase');
         return fromDatabase(data);
       });
       return Promise.all(updatePromises);
@@ -260,7 +280,7 @@ export const figurineService = {
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) throw new Error(error.message || 'Erreur Supabase');
       return;
     }
 
@@ -315,7 +335,7 @@ export const figurineService = {
         .or(`name.ilike.%${query}%,brand.ilike.%${query}%,category.ilike.%${query}%,notes.ilike.%${query}%`)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message || 'Erreur Supabase');
       return data || [];
     }
 
@@ -345,7 +365,7 @@ export const figurineService = {
         .from('figurines')
         .upsert(dbData);
 
-      if (error) throw error;
+      if (error) throw new Error(error.message || 'Erreur Supabase');
     } else {
       saveLocalFigurines(figurines);
     }

@@ -233,7 +233,13 @@ export async function importFigurinesFromCSV(
       await addFigurine(figurine);
       success++;
     } catch (error) {
-      errors.push(`Erreur pour "${figurine.name}": ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+      console.error('Import error for', figurine.name, error);
+      const errorMsg = error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+          ? error
+          : JSON.stringify(error);
+      errors.push(`Erreur pour "${figurine.name}": ${errorMsg}`);
     }
   }
 
