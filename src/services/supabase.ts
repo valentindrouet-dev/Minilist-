@@ -149,27 +149,18 @@ export const figurineService = {
     };
 
     if (client) {
-      try {
-        const dbData = toDatabase(figurine);
-        const { data, error } = await client
-          .from('figurines')
-          .insert(dbData)
-          .select()
-          .single();
+      const dbData = toDatabase(figurine);
+      const { data, error } = await client
+        .from('figurines')
+        .insert(dbData)
+        .select()
+        .single();
 
-        if (error) {
-          console.warn('Supabase create error, falling back to localStorage:', error.message);
-          // Fallback to localStorage
-        } else {
-          return fromDatabase(data);
-        }
-      } catch (err) {
-        console.warn('Supabase create failed, falling back to localStorage:', err);
-        // Fallback to localStorage
-      }
+      if (error) throw new Error(error.message || 'Erreur Supabase');
+      return fromDatabase(data);
     }
 
-    // localStorage fallback
+    // localStorage only if Supabase is not configured
     const figurines = getLocalFigurines();
     figurines.unshift(figurine);
     try {
@@ -188,28 +179,19 @@ export const figurineService = {
     const now = new Date().toISOString();
 
     if (client) {
-      try {
-        const dbData = toDatabase({ ...input, updated_at: now });
-        const { data, error } = await client
-          .from('figurines')
-          .update(dbData)
-          .eq('id', id)
-          .select()
-          .single();
+      const dbData = toDatabase({ ...input, updated_at: now });
+      const { data, error } = await client
+        .from('figurines')
+        .update(dbData)
+        .eq('id', id)
+        .select()
+        .single();
 
-        if (error) {
-          console.warn('Supabase update error, falling back to localStorage:', error.message);
-          // Fallback to localStorage
-        } else {
-          return fromDatabase(data);
-        }
-      } catch (err) {
-        console.warn('Supabase update failed, falling back to localStorage:', err);
-        // Fallback to localStorage
-      }
+      if (error) throw new Error(error.message || 'Erreur Supabase');
+      return fromDatabase(data);
     }
 
-    // localStorage fallback
+    // localStorage only if Supabase is not configured
     const figurines = getLocalFigurines();
     const index = figurines.findIndex(f => f.id === id);
     if (index === -1) throw new Error('Figurine not found');
