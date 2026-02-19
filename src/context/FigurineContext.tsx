@@ -54,6 +54,8 @@ const initialSort: SortState = {
 
 const GRID_SIZE_KEY = 'minilist_grid_size';
 const SORT_KEY = 'minilist_sort';
+const KEEPALIVE_KEY = 'minilist_keepalive_last';
+const KEEPALIVE_INTERVAL_MS = 5 * 24 * 60 * 60 * 1000; // 5 days
 
 export function FigurineProvider({ children }: { children: ReactNode }) {
   const [figurines, setFigurines] = useState<Figurine[]>([]);
@@ -144,6 +146,35 @@ export function FigurineProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refreshFigurines();
   }, [refreshFigurines]);
+
+  // Keep-alive: ping Supabase every 5 days to prevent automatic project pausing
+  useEffect(() => {
+    const runKeepAlive = async () => {
+      const lastPing = localStorage.getItem(KEEPALIVE_KEY);
+      const now = Date.now();
+
+      if (lastPing && now - parseInt(lastPing, 10) < KEEPALIVE_INTERVAL_MS) {
+        return; // Not yet time to ping
+      }
+
+      try {
+        const result = await figurineService.testConnection();
+        if (result.ok) {
+          localStorage.setItem(KEEPALIVE_KEY, String(now));
+          console.log('[keep-alive] Supabase ping OK, projet actif.');
+        }
+      } catch {
+        // Silently ignore keep-alive errors
+      }
+    };
+
+    // Run once on mount
+    runKeepAlive();
+
+    // Then check again every 24h in case the tab stays open
+    const interval = setInterval(runKeepAlive, 24 * 60 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const filteredFigurines = React.useMemo(() => {
     let result = figurines.filter(fig => {
