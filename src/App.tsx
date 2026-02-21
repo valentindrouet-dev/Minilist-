@@ -5,7 +5,7 @@ import { PresetProvider } from './context/PresetContext';
 import { Header, SearchBar, FilterPanel, FigurineGrid, FigurineTable, FigurineForm, FigurineDetailModal, StatsPage, ViewControls, PresetManager, ImportExportModal, BatchEditModal, MultiAddModal, GameBoxModal, GameView, GameEditModal, ImageMigrationModal } from './components';
 import type { Figurine, FigurineInput, BatchEditInput, ViewMode } from './types';
 import { isSupabaseConfigured } from './services/supabase';
-import { CheckSquare, Edit3, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { CheckSquare, Edit3, Trash2, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
 
 const VIEW_MODE_KEY = 'minilist_view_mode';
 
@@ -13,6 +13,7 @@ function CollectionPage() {
   const {
     filteredFigurines,
     loading,
+    syncing,
     error,
     filters,
     setFilters,
@@ -295,10 +296,15 @@ function CollectionPage() {
                 {headerCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                 <span className="hidden sm:inline">{headerCollapsed ? 'Filtres' : 'Masquer'}</span>
               </button>
-              <div className="text-sm text-gray-500">
-                {totalFigurines} figurine{totalFigurines !== 1 ? 's' : ''}
-                {filteredFigurines.length !== totalFigurines && ` (${filteredFigurines.length} entrées)`}
-                {filters.search && ` pour "${filters.search}"`}
+              <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                <span>
+                  {totalFigurines} figurine{totalFigurines !== 1 ? 's' : ''}
+                  {filteredFigurines.length !== totalFigurines && ` (${filteredFigurines.length} entrées)`}
+                  {filters.search && ` pour "${filters.search}"`}
+                </span>
+                {syncing && (
+                  <RefreshCw size={13} className="animate-spin text-gray-400" title="Mise à jour en arrière-plan…" />
+                )}
               </div>
               {/* Selection mode toggle */}
               <button
